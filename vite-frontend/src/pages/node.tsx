@@ -1075,77 +1075,79 @@ export default function NodePage() {
           />
         </div>
 
-        <div className="flex min-h-9 min-w-0 max-w-full items-center justify-start gap-2 overflow-x-auto whitespace-nowrap touch-pan-x sm:justify-end [&>*]:shrink-0">
-          {selectMode ? (
-            <>
-              <span className="text-sm text-default-600 shrink-0">
-                已选 {selectedIds.size} 项
-              </span>
-              <Button
-                color="primary"
-                size="sm"
-                variant="flat"
-                onPress={selectAll}
-              >
-                全选
-              </Button>
-              <Button
-                color="secondary"
-                size="sm"
-                variant="flat"
-                onPress={deselectAll}
-              >
-                清空
-              </Button>
-              <Button
-                color="warning"
-                isDisabled={selectedIds.size === 0}
-                isLoading={batchUpgradeLoading}
-                size="sm"
-                variant="flat"
-                onPress={() => openUpgradeModal("batch")}
-              >
-                升级
-              </Button>
-              <Button
-                color="danger"
-                isDisabled={selectedIds.size === 0}
-                size="sm"
-                variant="flat"
-                onPress={() => setBatchDeleteModalOpen(true)}
-              >
-                删除
-              </Button>
-              <Button
-                color="secondary"
-                size="sm"
-                variant="solid"
-                onPress={toggleSelectMode}
-              >
-                退出
-              </Button>
-            </>
-          ) : (
-            <>
-              <Button
-                className="bg-sky-100 text-sky-700 hover:bg-sky-200 dark:bg-sky-900/30 dark:text-sky-300 dark:hover:bg-sky-900/45"
-                color="default"
-                size="sm"
-                variant="flat"
-                onPress={toggleSelectMode}
-              >
-                批量
-              </Button>
-              <Button
-                color="primary"
-                size="sm"
-                variant="flat"
-                onPress={handleAdd}
-              >
-                新增
-              </Button>
-            </>
-          )}
+        <div className="min-h-9 min-w-0 max-w-full overflow-x-auto touch-pan-x">
+          <div className="flex min-h-9 w-max min-w-full items-center justify-end gap-2 whitespace-nowrap [&>*]:shrink-0">
+            {selectMode ? (
+              <>
+                <span className="text-sm text-default-600 shrink-0">
+                  已选 {selectedIds.size} 项
+                </span>
+                <Button
+                  color="primary"
+                  size="sm"
+                  variant="flat"
+                  onPress={selectAll}
+                >
+                  全选
+                </Button>
+                <Button
+                  color="secondary"
+                  size="sm"
+                  variant="flat"
+                  onPress={deselectAll}
+                >
+                  清空
+                </Button>
+                <Button
+                  color="warning"
+                  isDisabled={selectedIds.size === 0}
+                  isLoading={batchUpgradeLoading}
+                  size="sm"
+                  variant="flat"
+                  onPress={() => openUpgradeModal("batch")}
+                >
+                  升级
+                </Button>
+                <Button
+                  color="danger"
+                  isDisabled={selectedIds.size === 0}
+                  size="sm"
+                  variant="flat"
+                  onPress={() => setBatchDeleteModalOpen(true)}
+                >
+                  删除
+                </Button>
+                <Button
+                  color="secondary"
+                  size="sm"
+                  variant="solid"
+                  onPress={toggleSelectMode}
+                >
+                  退出
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button
+                  className="bg-sky-100 text-sky-700 hover:bg-sky-200 dark:bg-sky-900/30 dark:text-sky-300 dark:hover:bg-sky-900/45"
+                  color="default"
+                  size="sm"
+                  variant="flat"
+                  onPress={toggleSelectMode}
+                >
+                  批量
+                </Button>
+                <Button
+                  color="primary"
+                  size="sm"
+                  variant="flat"
+                  onPress={handleAdd}
+                >
+                  新增
+                </Button>
+              </>
+            )}
+          </div>
         </div>
       </div>
 

@@ -1722,205 +1722,207 @@ export default function ForwardPage() {
             onOpen={() => setIsSearchVisible(true)}
           />
         </div>
-        <div className="flex min-h-9 min-w-0 max-w-full items-center justify-start gap-2 overflow-x-auto whitespace-nowrap touch-pan-x sm:justify-end sm:gap-3 [&>*]:shrink-0">
-          {selectMode ? (
-            <>
-              <span className="text-sm text-default-600 shrink-0">
-                已选择 {selectedIds.size} 项
-              </span>
-              <Button
-                color="primary"
-                size="sm"
-                variant="flat"
-                onPress={selectAll}
-              >
-                全选
-              </Button>
-              <Button
-                color="secondary"
-                size="sm"
-                variant="flat"
-                onPress={deselectAll}
-              >
-                清空
-              </Button>
-              <Button
-                color="danger"
-                isDisabled={selectedIds.size === 0}
-                size="sm"
-                variant="flat"
-                onPress={() => setBatchDeleteModalOpen(true)}
-              >
-                删除
-              </Button>
-              <Button
-                color="warning"
-                isDisabled={selectedIds.size === 0}
-                isLoading={batchLoading}
-                size="sm"
-                variant="flat"
-                onPress={() => handleBatchToggleService(false)}
-              >
-                停用
-              </Button>
-              <Button
-                color="success"
-                isDisabled={selectedIds.size === 0}
-                isLoading={batchLoading}
-                size="sm"
-                variant="flat"
-                onPress={() => handleBatchToggleService(true)}
-              >
-                启用
-              </Button>
-              <Button
-                color="primary"
-                isDisabled={selectedIds.size === 0}
-                isLoading={batchLoading}
-                size="sm"
-                variant="flat"
-                onPress={handleBatchRedeploy}
-              >
-                下发
-              </Button>
-              <Button
-                color="secondary"
-                isDisabled={selectedIds.size === 0}
-                size="sm"
-                variant="flat"
-                onPress={() => setBatchChangeTunnelModalOpen(true)}
-              >
-                隧道
-              </Button>
-              <Button
-                color="secondary"
-                size="sm"
-                variant="solid"
-                onPress={toggleSelectMode}
-              >
-                退出
-              </Button>
-            </>
-          ) : (
-            <>
-              {/* 筛选按钮 */}
-              <Button
-                isIconOnly
-                aria-label="筛选条件"
-                className={
-                  filterUserId !== "all" || filterTunnelId !== "all"
-                    ? "bg-primary/20 text-primary relative"
-                    : "text-default-600 relative"
-                }
-                color={
-                  filterUserId !== "all" || filterTunnelId !== "all"
-                    ? "primary"
-                    : "default"
-                }
-                size="sm"
-                title="筛选条件"
-                variant="flat"
-                onPress={() => setIsFilterModalOpen(true)}
-              >
-                <svg
-                  aria-hidden="true"
-                  className="w-4 h-4"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
+        <div className="min-h-9 min-w-0 max-w-full overflow-x-auto touch-pan-x">
+          <div className="flex min-h-9 w-max min-w-full items-center justify-end gap-2 whitespace-nowrap sm:gap-3 [&>*]:shrink-0">
+            {selectMode ? (
+              <>
+                <span className="text-sm text-default-600 shrink-0">
+                  已选择 {selectedIds.size} 项
+                </span>
+                <Button
+                  color="primary"
+                  size="sm"
+                  variant="flat"
+                  onPress={selectAll}
                 >
-                  <path
-                    d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                  />
-                </svg>
-                {(filterUserId !== "all" || filterTunnelId !== "all") && (
-                  <span className="absolute top-1.5 right-1.5 flex h-1.5 w-1.5 rounded-full bg-primary" />
-                )}
-              </Button>
-              {/* 显示模式切换按钮 */}
-              <Button
-                isIconOnly
-                aria-label={
-                  viewMode === "grouped" ? "切换到直接显示" : "切换到分类显示"
-                }
-                className="text-sm"
-                color="default"
-                size="sm"
-                title={
-                  viewMode === "grouped" ? "切换到直接显示" : "切换到分类显示"
-                }
-                variant="flat"
-                onPress={handleViewModeChange}
-              >
-                {viewMode === "grouped" ? (
+                  全选
+                </Button>
+                <Button
+                  color="secondary"
+                  size="sm"
+                  variant="flat"
+                  onPress={deselectAll}
+                >
+                  清空
+                </Button>
+                <Button
+                  color="danger"
+                  isDisabled={selectedIds.size === 0}
+                  size="sm"
+                  variant="flat"
+                  onPress={() => setBatchDeleteModalOpen(true)}
+                >
+                  删除
+                </Button>
+                <Button
+                  color="warning"
+                  isDisabled={selectedIds.size === 0}
+                  isLoading={batchLoading}
+                  size="sm"
+                  variant="flat"
+                  onPress={() => handleBatchToggleService(false)}
+                >
+                  停用
+                </Button>
+                <Button
+                  color="success"
+                  isDisabled={selectedIds.size === 0}
+                  isLoading={batchLoading}
+                  size="sm"
+                  variant="flat"
+                  onPress={() => handleBatchToggleService(true)}
+                >
+                  启用
+                </Button>
+                <Button
+                  color="primary"
+                  isDisabled={selectedIds.size === 0}
+                  isLoading={batchLoading}
+                  size="sm"
+                  variant="flat"
+                  onPress={handleBatchRedeploy}
+                >
+                  下发
+                </Button>
+                <Button
+                  color="secondary"
+                  isDisabled={selectedIds.size === 0}
+                  size="sm"
+                  variant="flat"
+                  onPress={() => setBatchChangeTunnelModalOpen(true)}
+                >
+                  隧道
+                </Button>
+                <Button
+                  color="secondary"
+                  size="sm"
+                  variant="solid"
+                  onPress={toggleSelectMode}
+                >
+                  退出
+                </Button>
+              </>
+            ) : (
+              <>
+                {/* 筛选按钮 */}
+                <Button
+                  isIconOnly
+                  aria-label="筛选条件"
+                  className={
+                    filterUserId !== "all" || filterTunnelId !== "all"
+                      ? "bg-primary/20 text-primary relative"
+                      : "text-default-600 relative"
+                  }
+                  color={
+                    filterUserId !== "all" || filterTunnelId !== "all"
+                      ? "primary"
+                      : "default"
+                  }
+                  size="sm"
+                  title="筛选条件"
+                  variant="flat"
+                  onPress={() => setIsFilterModalOpen(true)}
+                >
                   <svg
                     aria-hidden="true"
                     className="w-4 h-4"
-                    fill="currentColor"
-                    viewBox="0 0 20 20"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
                   >
                     <path
-                      clipRule="evenodd"
-                      d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1v-2zM3 16a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1v-2z"
-                      fillRule="evenodd"
+                      d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
                     />
                   </svg>
-                ) : (
-                  <svg
-                    aria-hidden="true"
-                    className="w-4 h-4"
-                    fill="currentColor"
-                    viewBox="0 0 20 20"
-                  >
-                    <path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z" />
-                  </svg>
-                )}
-              </Button>
+                  {(filterUserId !== "all" || filterTunnelId !== "all") && (
+                    <span className="absolute top-1.5 right-1.5 flex h-1.5 w-1.5 rounded-full bg-primary" />
+                  )}
+                </Button>
+                {/* 显示模式切换按钮 */}
+                <Button
+                  isIconOnly
+                  aria-label={
+                    viewMode === "grouped" ? "切换到直接显示" : "切换到分类显示"
+                  }
+                  className="text-sm"
+                  color="default"
+                  size="sm"
+                  title={
+                    viewMode === "grouped" ? "切换到直接显示" : "切换到分类显示"
+                  }
+                  variant="flat"
+                  onPress={handleViewModeChange}
+                >
+                  {viewMode === "grouped" ? (
+                    <svg
+                      aria-hidden="true"
+                      className="w-4 h-4"
+                      fill="currentColor"
+                      viewBox="0 0 20 20"
+                    >
+                      <path
+                        clipRule="evenodd"
+                        d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1v-2zM3 16a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1v-2z"
+                        fillRule="evenodd"
+                      />
+                    </svg>
+                  ) : (
+                    <svg
+                      aria-hidden="true"
+                      className="w-4 h-4"
+                      fill="currentColor"
+                      viewBox="0 0 20 20"
+                    >
+                      <path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z" />
+                    </svg>
+                  )}
+                </Button>
 
-              {/* 导入按钮 */}
-              <Button
-                color="warning"
-                size="sm"
-                variant="flat"
-                onPress={handleImport}
-              >
-                导入
-              </Button>
+                {/* 导入按钮 */}
+                <Button
+                  color="warning"
+                  size="sm"
+                  variant="flat"
+                  onPress={handleImport}
+                >
+                  导入
+                </Button>
 
-              {/* 导出按钮 */}
-              <Button
-                color="success"
-                isLoading={exportLoading}
-                size="sm"
-                variant="flat"
-                onPress={handleExport}
-              >
-                导出
-              </Button>
+                {/* 导出按钮 */}
+                <Button
+                  color="success"
+                  isLoading={exportLoading}
+                  size="sm"
+                  variant="flat"
+                  onPress={handleExport}
+                >
+                  导出
+                </Button>
 
-              <Button
-                className="bg-sky-100 text-sky-700 hover:bg-sky-200 dark:bg-sky-900/30 dark:text-sky-300 dark:hover:bg-sky-900/45"
-                color="default"
-                size="sm"
-                variant="flat"
-                onPress={toggleSelectMode}
-              >
-                批量
-              </Button>
+                <Button
+                  className="bg-sky-100 text-sky-700 hover:bg-sky-200 dark:bg-sky-900/30 dark:text-sky-300 dark:hover:bg-sky-900/45"
+                  color="default"
+                  size="sm"
+                  variant="flat"
+                  onPress={toggleSelectMode}
+                >
+                  批量
+                </Button>
 
-              <Button
-                color="primary"
-                size="sm"
-                variant="flat"
-                onPress={handleAdd}
-              >
-                新增
-              </Button>
-            </>
-          )}
+                <Button
+                  color="primary"
+                  size="sm"
+                  variant="flat"
+                  onPress={handleAdd}
+                >
+                  新增
+                </Button>
+              </>
+            )}
+          </div>
         </div>
       </div>
 
