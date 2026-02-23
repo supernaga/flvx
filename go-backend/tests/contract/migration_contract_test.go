@@ -45,6 +45,18 @@ func TestCaptchaVerifyLoginContract(t *testing.T) {
 		assertCodeMsg(t, resp, -1, "验证码校验失败")
 	})
 
+	t.Run("whmcs api client bypasses captcha", func(t *testing.T) {
+		body := bytes.NewBufferString(`{"username":"admin_user","password":"admin_user","captchaId":""}`)
+		req := httptest.NewRequest(http.MethodPost, "/api/v1/user/login", body)
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("X-FLVX-API-Client", "whmcs")
+		resp := httptest.NewRecorder()
+
+		router.ServeHTTP(resp, req)
+
+		assertCode(t, resp, 0)
+	})
+
 	t.Run("captcha token is one-time and consumed by login", func(t *testing.T) {
 		verifyReq := httptest.NewRequest(http.MethodPost, "/api/v1/captcha/verify", bytes.NewBufferString(`{"id":"captcha-token-1","data":"ok"}`))
 		verifyReq.Header.Set("Content-Type", "application/json")

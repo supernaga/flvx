@@ -219,7 +219,7 @@ func (h *Handler) login(w http.ResponseWriter, r *http.Request) {
 		response.WriteJSON(w, response.Err(-2, err.Error()))
 		return
 	}
-	if captchaEnabled {
+	if captchaEnabled && !h.apiClientCaptchaBypassEnabled(r) {
 		captchaID := strings.TrimSpace(req.CaptchaID)
 		if captchaID == "" {
 			response.WriteJSON(w, response.ErrDefault("验证码校验失败"))
@@ -988,21 +988,24 @@ func (h *Handler) captchaEnabled() (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	if cfg == nil || !strings.EqualFold(cfg.Value, "true") {
+	if cfg == nil {
 		return false, nil
 	}
+	return strings.EqualFold(cfg.Value, "true"), nil
+}
 
-	// captcha_enabled=true, but we need to verify cloudflare_secret_key is configured
-	// If secret key is not configured, treat captcha as disabled to avoid blocking login
-	secretKey, err := h.repo.GetConfigByName("cloudflare_secret_key")
-	if err != nil {
-		return false, err
-	}
-	if secretKey == nil || strings.TrimSpace(secretKey.Value) == "" {
-		return false, nil
+func (h *Handler) apiClientCaptchaBypassEnabled(r *http.Request) bool {
+	if r == nil {
+		return false
 	}
 
-	return true, nil
+	client := strings.ToLower(strings.TrimSpace(r.Header.Get("X-FLVX-API-Client")))
+	switch client {
+	case "whmcs", "whmcs-module":
+		return true
+	default:
+		return false
+	}
 }
 
 func (h *Handler) markCaptchaToken(token string) {
