@@ -1170,7 +1170,7 @@ export default function UserPage() {
                                   classNames={{
                                     trigger: "min-h-10 h-10",
                                   }}
-                                  placeholder="限速规则"
+                                  placeholder="请选择限速规则"
                                   selectedKeys={
                                     batchTunnelSelections.get(tunnel.id) !==
                                       null &&
@@ -1429,6 +1429,7 @@ export default function UserPage() {
 
                   <Select
                     label="限速规则"
+                    placeholder="请选择限速规则"
                     selectedKeys={
                       editTunnelSelectedSpeedId !== null
                         ? [editTunnelSelectedSpeedId.toString()]

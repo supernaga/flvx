@@ -2349,7 +2349,7 @@ export default function ForwardPage() {
 
                   <Select
                     label="限速规则"
-                    placeholder="不限速"
+                    placeholder="请选择限速规则"
                     selectedKeys={
                       selectedSpeedId !== null
                         ? [selectedSpeedId.toString()]
