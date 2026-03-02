@@ -118,6 +118,12 @@ const CONFIG_ITEMS: ConfigItem[] = [
     type: "input",
   },
   {
+    key: "forward_compact_mode",
+    label: "转发页面精简模式",
+    description: "开启后，转发页面列表使用 2.1.6-alpha8 样式（全局配置）",
+    type: "switch",
+  },
+  {
     key: "captcha_enabled",
     label: "启用验证码",
     description: "开启后，用户登录时需要完成验证码验证",
@@ -167,6 +173,7 @@ const getInitialConfigs = (): Record<string, string> => {
     "captcha_enabled",
     "cloudflare_site_key",
     "cloudflare_secret_key",
+    "forward_compact_mode",
     "ip",
     "panel_domain",
     "app_logo",
