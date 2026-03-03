@@ -4620,10 +4620,10 @@ export default function ForwardPage() {
             ) : (
               <>
                 <p className="text-small text-default-500">
-                  ny格式：JSON对象，支持多个目标地址（负载均衡）
+                  ny格式：JSON对象，支持多个目标地址（负载均衡），按所选隧道导入
                 </p>
                 <p className="text-small text-default-400">
-                  格式：&#123;&quot;dest&quot;:[&quot;地址:端口&quot;],&quot;listen_port&quot;:端口,&quot;name&quot;:&quot;名称&quot;&#125;
+                  格式：&#123;&quot;dest&quot;:[&quot;地址:端口&quot;],&quot;listen_port&quot;:端口,&quot;name&quot;:&quot;名称&quot;&#125;（listen_port可省略，自动分配端口）
                 </p>
               </>
             )}
@@ -4696,7 +4696,7 @@ export default function ForwardPage() {
                 placeholder={
                   importFormat === "flvx"
                     ? "请输入要导入的转发数据，格式：目标地址|转发名称|入口端口"
-                    : '请输入ny格式数据，每行一个JSON对象，如：{"dest":["1.2.3.4:80"],"listen_port":8080,"name":"转发1"}'
+                    : '请输入ny格式数据，每行一个JSON对象，如：{"dest":["1.2.3.4:80"],"listen_port":8080,"name":"转发1"}；listen_port可省略自动分配'
                 }
                 value={importData}
                 variant="flat"

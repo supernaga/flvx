@@ -1,6 +1,6 @@
 export interface NyImportItem {
   dest: string[];
-  listen_port: number;
+  listen_port: number | null;
   name: string;
 }
 
@@ -11,6 +11,70 @@ export interface ParsedNyImportLine {
 }
 
 const ADDRESS_PATTERN = /^[^:]+:\d+$/;
+
+const getAliasField = (
+  item: Record<string, unknown>,
+  aliases: string[],
+): unknown => {
+  for (const alias of aliases) {
+    if (Object.prototype.hasOwnProperty.call(item, alias)) {
+      return item[alias];
+    }
+  }
+
+  return undefined;
+};
+
+const normalizeDestList = (value: unknown): string[] | null => {
+  if (Array.isArray(value)) {
+    const normalized = value.map((itemValue) =>
+      typeof itemValue === "string" ? itemValue.trim() : "",
+    );
+
+    if (normalized.some((itemValue) => itemValue === "")) {
+      return null;
+    }
+
+    return normalized;
+  }
+
+  if (typeof value === "string") {
+    const normalized = value
+      .split(",")
+      .map((itemValue) => itemValue.trim())
+      .filter((itemValue) => itemValue !== "");
+
+    return normalized.length > 0 ? normalized : null;
+  }
+
+  return null;
+};
+
+const normalizeListenPort = (value: unknown): number | null | undefined => {
+  if (value === undefined || value === null || value === "") {
+    return null;
+  }
+
+  if (typeof value === "number") {
+    return Number.isInteger(value) ? value : undefined;
+  }
+
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+
+    if (!trimmed) {
+      return null;
+    }
+
+    if (!/^\d+$/.test(trimmed)) {
+      return undefined;
+    }
+
+    return Number.parseInt(trimmed, 10);
+  }
+
+  return undefined;
+};
 
 const isValidListenPort = (value: unknown): value is number => {
   return (
@@ -27,11 +91,19 @@ const validateNyItem = (line: string, value: unknown): ParsedNyImportLine => {
   }
 
   const item = value as Record<string, unknown>;
-  const dest = item.dest;
-  const listenPort = item.listen_port;
-  const name = item.name;
+  const dest = getAliasField(item, ["dest", "dst", "target", "targets"]);
+  const listenPortRaw = getAliasField(item, [
+    "listen_port",
+    "listenPort",
+    "port",
+    "in_port",
+    "inPort",
+  ]);
+  const name = getAliasField(item, ["name", "forward_name", "forwardName"]);
+  const normalizedDest = normalizeDestList(dest);
+  const normalizedListenPort = normalizeListenPort(listenPortRaw);
 
-  if (!Array.isArray(dest) || dest.length === 0) {
+  if (!normalizedDest || normalizedDest.length === 0) {
     return { line, error: "dest数组为空或格式错误" };
   }
 
@@ -39,16 +111,12 @@ const validateNyItem = (line: string, value: unknown): ParsedNyImportLine => {
     return { line, error: "name不能为空" };
   }
 
-  if (!isValidListenPort(listenPort)) {
-    return { line, error: "listen_port必须为1-65535之间的数字" };
+  if (normalizedListenPort === undefined) {
+    return { line, error: "listen_port格式错误，应为1-65535之间的数字" };
   }
 
-  const normalizedDest = dest.map((itemValue) =>
-    typeof itemValue === "string" ? itemValue.trim() : "",
-  );
-
-  if (normalizedDest.some((itemValue) => itemValue === "")) {
-    return { line, error: "dest中包含空地址" };
+  if (normalizedListenPort !== null && !isValidListenPort(normalizedListenPort)) {
+    return { line, error: "listen_port必须为1-65535之间的数字" };
   }
 
   const invalid = normalizedDest.find(
@@ -63,7 +131,7 @@ const validateNyItem = (line: string, value: unknown): ParsedNyImportLine => {
     line,
     parsed: {
       dest: normalizedDest,
-      listen_port: listenPort,
+      listen_port: normalizedListenPort,
       name: name.trim(),
     },
   };

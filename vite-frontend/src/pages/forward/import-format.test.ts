@@ -46,6 +46,33 @@ test("parseNyFormatData returns validation errors for invalid fields", () => {
   assert.match(result[1].error || "", /目标地址格式错误/);
 });
 
+test("parseNyFormatData allows missing listen_port for auto assignment", () => {
+  const input = '{"dest":["1.1.1.1:1000"],"name":"No Port"}';
+
+  const result = parseNyFormatData(input);
+
+  assert.equal(result.length, 1);
+  assert.equal(result[0].error, undefined);
+  assert.equal(result[0].parsed?.listen_port, null);
+});
+
+test("parseNyFormatData supports ny alias fields", () => {
+  const input =
+    '{"dst":["2.2.2.2:2000"],"listenPort":"3000","forward_name":"Alias A"}\n{"target":"3.3.3.3:4000,4.4.4.4:5000","port":6000,"forwardName":"Alias B"}';
+
+  const result = parseNyFormatData(input);
+
+  assert.equal(result.length, 2);
+  assert.equal(result[0].error, undefined);
+  assert.equal(result[1].error, undefined);
+  assert.deepEqual(result[0].parsed?.dest, ["2.2.2.2:2000"]);
+  assert.equal(result[0].parsed?.listen_port, 3000);
+  assert.equal(result[0].parsed?.name, "Alias A");
+  assert.deepEqual(result[1].parsed?.dest, ["3.3.3.3:4000", "4.4.4.4:5000"]);
+  assert.equal(result[1].parsed?.listen_port, 6000);
+  assert.equal(result[1].parsed?.name, "Alias B");
+});
+
 test("convertNyItemToForwardInput maps ny fields correctly", () => {
   const mapped = convertNyItemToForwardInput({
     dest: ["1.1.1.1:1111", "2.2.2.2:2222"],
@@ -57,6 +84,21 @@ test("convertNyItemToForwardInput maps ny fields correctly", () => {
     name: "Forward Name",
     inPort: 3333,
     remoteAddr: "1.1.1.1:1111,2.2.2.2:2222",
+    strategy: "fifo",
+  });
+});
+
+test("convertNyItemToForwardInput keeps null inPort for auto assignment", () => {
+  const mapped = convertNyItemToForwardInput({
+    dest: ["1.1.1.1:1111"],
+    listen_port: null,
+    name: "No Port",
+  });
+
+  assert.deepEqual(mapped, {
+    name: "No Port",
+    inPort: null,
+    remoteAddr: "1.1.1.1:1111",
     strategy: "fifo",
   });
 });
