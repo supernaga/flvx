@@ -586,6 +586,7 @@ export default function ForwardPage() {
     strategy: "fifo",
     speedId: null,
   });
+  const [inIpTouched, setInIpTouched] = useState(false);
 
   // 表单验证错误
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
@@ -1276,6 +1277,7 @@ export default function ForwardPage() {
   // 新增转发
   const handleAdd = () => {
     setIsEdit(false);
+    setInIpTouched(false);
     setForm({
       name: "",
       tunnelId: null,
@@ -1293,6 +1295,7 @@ export default function ForwardPage() {
   // 编辑转发
   const handleEdit = (forward: Forward) => {
     setIsEdit(true);
+    setInIpTouched(false);
     setForm({
       id: forward.id,
       userId: forward.userId,
@@ -1357,11 +1360,17 @@ export default function ForwardPage() {
     const nextTunnelId = parseInt(tunnelId);
     const options = tunnelInIpOptionMap.get(nextTunnelId) || [];
 
-    setForm((prev) => ({
-      ...prev,
-      tunnelId: nextTunnelId,
-      inIp: options.includes(prev.inIp) ? prev.inIp : "",
-    }));
+    setInIpTouched(false);
+
+    setForm((prev) => {
+      const tunnelChanged = prev.tunnelId !== nextTunnelId;
+
+      return {
+        ...prev,
+        tunnelId: nextTunnelId,
+        inIp: tunnelChanged ? "" : options.includes(prev.inIp) ? prev.inIp : "",
+      };
+    });
   };
 
   // 提交表单
@@ -1388,7 +1397,7 @@ export default function ForwardPage() {
           name: form.name,
           tunnelId: form.tunnelId,
           inPort: form.inPort,
-          inIp: form.inIp || undefined,
+          ...(inIpTouched ? { inIp: form.inIp || "" } : {}),
           remoteAddr: processedRemoteAddr,
           strategy: addressCount > 1 ? form.strategy : "fifo",
           speedId: normalizeSpeedId(form.speedId),
@@ -4287,6 +4296,8 @@ export default function ForwardPage() {
                     variant="bordered"
                     onSelectionChange={(keys) => {
                       const selectedKey = Array.from(keys)[0] as string;
+
+                      setInIpTouched(true);
 
                       setForm((prev) => ({
                         ...prev,

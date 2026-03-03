@@ -115,7 +115,10 @@ const validateNyItem = (line: string, value: unknown): ParsedNyImportLine => {
     return { line, error: "listen_port格式错误，应为1-65535之间的数字" };
   }
 
-  if (normalizedListenPort !== null && !isValidListenPort(normalizedListenPort)) {
+  if (
+    normalizedListenPort !== null &&
+    !isValidListenPort(normalizedListenPort)
+  ) {
     return { line, error: "listen_port必须为1-65535之间的数字" };
   }
 
