@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import toast from "react-hot-toast";
+import { useNavigate } from "react-router-dom";
 import {
   DndContext,
   KeyboardSensor,
@@ -64,6 +65,7 @@ import { useNodeOfflineTimers } from "@/pages/node/use-node-offline-timers";
 import { useNodeRealtime } from "@/pages/node/use-node-realtime";
 import { useLocalStorageState } from "@/hooks/use-local-storage-state";
 import { loadStoredOrder, saveOrder } from "@/utils/order-storage";
+import { PlusIcon, DeleteIcon, CheckAllIcon, XCircleIcon, ListCheckIcon, XIcon, ArrowUpIcon, ShareIcon } from "@/components/icons";
 
 interface Node {
   id: number;
@@ -116,6 +118,8 @@ interface NodeForm {
   socks: number; // 0 关 1 开
 }
 
+type NodeTab = "local" | "remote";
+
 const SortableItem = ({
   id,
   children,
@@ -158,12 +162,17 @@ const SortableItem = ({
 };
 
 export default function NodePage() {
+  const navigate = useNavigate();
   const [nodeList, setNodeList] = useState<Node[]>([]);
   const [nodeOrder, setNodeOrder] = useState<number[]>([]);
   const [loading, setLoading] = useState(false);
   const [searchKeyword, setSearchKeyword] = useLocalStorageState(
     "node-search-keyword",
     "",
+  );
+  const [activeTab, setActiveTab] = useLocalStorageState<NodeTab>(
+    "node-active-tab",
+    "local",
   );
   const [isSearchVisible, setIsSearchVisible] = useState(false);
   const [dialogVisible, setDialogVisible] = useState(false);
@@ -963,7 +972,7 @@ export default function NodePage() {
   };
 
   const selectAll = () => {
-    setSelectedIds(new Set(sortedNodes.map((n) => n.id)));
+    setSelectedIds(new Set(displayNodes.map((n) => n.id)));
   };
 
   const deselectAll = () => {
@@ -1062,94 +1071,169 @@ export default function NodePage() {
     return sortedByDb;
   }, [nodeList, nodeOrder, searchKeyword]);
 
-  const sortableNodeIds = useMemo(
-    () => sortedNodes.map((n) => n.id),
+  const localNodes = useMemo(
+    () => sortedNodes.filter((node) => node.isRemote !== 1),
     [sortedNodes],
+  );
+
+  const remoteNodes = useMemo(
+    () => sortedNodes.filter((node) => node.isRemote === 1),
+    [sortedNodes],
+  );
+
+  const displayNodes = useMemo(
+    () => (activeTab === "remote" ? remoteNodes : localNodes),
+    [activeTab, localNodes, remoteNodes],
+  );
+
+  const sortableNodeIds = useMemo(
+    () => displayNodes.map((n) => n.id),
+    [displayNodes],
   );
 
   return (
     <AnimatedPage className="px-3 lg:px-6 py-8">
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between mb-6 gap-3">
-        <div className="flex-1 max-w-sm flex items-center gap-2">
-          <SearchBar
-            isVisible={isSearchVisible}
-            placeholder="搜索节点名称或IP"
-            value={searchKeyword}
-            onChange={setSearchKeyword}
-            onClose={() => setIsSearchVisible(false)}
-            onOpen={() => setIsSearchVisible(true)}
-          />
+      <div className="mb-6 space-y-3">
+        <div className="flex items-center gap-2 overflow-x-auto pb-1">
+          <Button
+            className="shrink-0"
+            color={activeTab === "local" ? "primary" : "default"}
+            size="sm"
+            variant={activeTab === "local" ? "solid" : "flat"}
+            onPress={() => setActiveTab("local")}
+          >
+            本地节点
+            <Chip className="ml-1" size="sm" variant="flat">
+              {localNodes.length}
+            </Chip>
+          </Button>
+          <Button
+            className="shrink-0"
+            color={activeTab === "remote" ? "primary" : "default"}
+            size="sm"
+            variant={activeTab === "remote" ? "solid" : "flat"}
+            onPress={() => setActiveTab("remote")}
+          >
+            远程节点
+            <Chip className="ml-1" size="sm" variant="flat">
+              {remoteNodes.length}
+            </Chip>
+          </Button>
         </div>
 
-        <div className="min-h-9 min-w-0 max-w-full overflow-x-auto touch-pan-x">
-          <div className="flex min-h-9 w-max min-w-full items-center justify-end gap-2 whitespace-nowrap [&>*]:shrink-0">
+        <div className="flex flex-row items-center justify-between gap-3 overflow-x-auto pb-1">
+          <div
+            className={`flex-1 max-w-sm flex items-center gap-2 shrink-0 ${
+              isSearchVisible ? "min-w-[200px]" : "min-w-0"
+            }`}
+          >
+            <SearchBar
+              isVisible={isSearchVisible}
+              placeholder={
+                activeTab === "remote"
+                  ? "搜索远程节点名称或IP"
+                  : "搜索本地节点名称或IP"
+              }
+              value={searchKeyword}
+              onChange={setSearchKeyword}
+              onClose={() => setIsSearchVisible(false)}
+              onOpen={() => setIsSearchVisible(true)}
+            />
+          </div>
+
+          <div className="flex h-8 items-center justify-end gap-2 whitespace-nowrap shrink-0">
             {selectMode ? (
               <>
                 <span className="text-sm text-default-600 shrink-0">
-                  已选 {selectedIds.size} 项
+                  已选择 {selectedIds.size} 项
                 </span>
                 <Button
+                  isIconOnly
                   color="primary"
                   size="sm"
+                  title="全选"
                   variant="flat"
                   onPress={selectAll}
                 >
-                  全选
+                  <CheckAllIcon className="w-4 h-4" />
                 </Button>
                 <Button
+                  isIconOnly
                   color="secondary"
                   size="sm"
+                  title="清空"
                   variant="flat"
                   onPress={deselectAll}
                 >
-                  清空
+                  <XCircleIcon className="w-4 h-4" />
                 </Button>
                 <Button
+                  isIconOnly
                   color="warning"
                   isDisabled={selectedIds.size === 0}
                   isLoading={batchUpgradeLoading}
                   size="sm"
+                  title="升级"
                   variant="flat"
                   onPress={() => openUpgradeModal("batch")}
                 >
-                  升级
+                  <ArrowUpIcon className="w-4 h-4" />
                 </Button>
                 <Button
+                  isIconOnly
                   color="danger"
                   isDisabled={selectedIds.size === 0}
                   size="sm"
+                  title="删除"
                   variant="flat"
                   onPress={() => setBatchDeleteModalOpen(true)}
                 >
-                  删除
+                  <DeleteIcon className="w-4 h-4" />
                 </Button>
                 <Button
-                  color="secondary"
+                  isIconOnly
+                  color="default"
                   size="sm"
+                  title="退出"
                   variant="solid"
                   onPress={toggleSelectMode}
                 >
-                  退出
+                  <XIcon className="w-4 h-4" />
                 </Button>
               </>
             ) : (
               <>
                 <Button
-                  className="bg-sky-100 text-sky-700 hover:bg-sky-200 dark:bg-sky-900/30 dark:text-sky-300 dark:hover:bg-sky-900/45"
+                  isIconOnly
+                  className="bg-violet-100 text-violet-700 hover:bg-violet-200 dark:bg-violet-900/30 dark:text-violet-300 dark:hover:bg-violet-900/45"
                   color="default"
                   size="sm"
+                  title="选择"
                   variant="flat"
                   onPress={toggleSelectMode}
                 >
-                  批量
+                  <ListCheckIcon className="w-4 h-4" />
                 </Button>
                 <Button
+                  isIconOnly
+                  className="bg-indigo-100 text-indigo-700 hover:bg-indigo-200 dark:bg-indigo-900/30 dark:text-indigo-300 dark:hover:bg-indigo-900/45"
+                  color="default"
+                  size="sm"
+                  title="面板共享"
+                  variant="flat"
+                  onPress={() => navigate("/panel-sharing")}
+                >
+                  <ShareIcon className="w-4 h-4" />
+                </Button>
+                <Button
+                  isIconOnly
                   color="primary"
                   size="sm"
+                  title="新增"
                   variant="flat"
                   onPress={handleAdd}
                 >
-                  新增
+                  <PlusIcon className="w-4 h-4" />
                 </Button>
               </>
             )}
@@ -1176,6 +1260,15 @@ export default function NodePage() {
           className="h-64"
           message="暂无节点配置，点击上方按钮开始创建"
         />
+      ) : displayNodes.length === 0 ? (
+        <PageEmptyState
+          className="h-64"
+          message={
+            activeTab === "remote"
+              ? "暂无远程节点"
+              : "暂无本地节点，点击上方按钮开始创建"
+          }
+        />
       ) : (
         <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
           <SortableContext
@@ -1183,7 +1276,7 @@ export default function NodePage() {
             strategy={rectSortingStrategy}
           >
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
-              {sortedNodes.map((node) => {
+              {displayNodes.map((node) => {
                 const isRemoteNode = node.isRemote === 1;
 
                 return (
@@ -1195,18 +1288,20 @@ export default function NodePage() {
                       >
                         <CardHeader className="pb-2 md:pb-2">
                           <div className="flex justify-between items-start w-full">
-                            <div className="flex items-center gap-2 flex-1 min-w-0">
+                            <div className="flex items-center gap-2 flex-1 min-w-0 overflow-hidden">
                               {selectMode && (
                                 <Checkbox
                                   isSelected={selectedIds.has(node.id)}
                                   onValueChange={() => toggleSelect(node.id)}
                                 />
                               )}
-                              <h3 className="font-semibold text-foreground truncate text-sm">
-                                {node.name}
-                              </h3>
+                              <div className="min-w-0 flex-1 overflow-x-auto overscroll-x-contain whitespace-nowrap [scrollbar-width:thin] [&::-webkit-scrollbar]:h-1 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-default-300/80">
+                                <h3 className="inline-block min-w-full pr-2 font-semibold text-foreground text-sm">
+                                  {node.name}
+                                </h3>
+                              </div>
                             </div>
-                            <div className="flex items-center gap-1.5 ml-2">
+                            <div className="flex shrink-0 items-center gap-1.5 ml-2 whitespace-nowrap">
                               <div
                                 className="cursor-grab active:cursor-grabbing p-2 text-default-400 hover:text-default-600 transition-colors touch-manipulation opacity-100 sm:opacity-0 sm:group-hover:opacity-100"
                                 {...listeners}
@@ -1240,7 +1335,7 @@ export default function NodePage() {
 
                                 return (
                                   <Chip
-                                    className="text-xs"
+                                    className="text-xs shrink-0 whitespace-nowrap"
                                     color={connectionStatusMeta.color}
                                     size="sm"
                                     variant="flat"
