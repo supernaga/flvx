@@ -278,7 +278,7 @@ const SortableItem = ({
       ref={setNodeRef}
       style={style}
       {...attributes}
-      className="overflow-hidden h-full"
+      className="overflow-visible h-full"
       {...listeners}
     >
       {children(listeners)}
@@ -377,6 +377,30 @@ export default function NodePage() {
   const [upgradeProgress, setUpgradeProgress] = useState<
     Record<number, { stage: string; percent: number; message: string }>
   >({});
+  const [infoPopoverPlacement, setInfoPopoverPlacement] = useState<
+    Record<number, "left" | "bottom">
+  >({});
+
+  const updateInfoPopoverPlacement = useCallback(
+    (nodeId: number, triggerElement: HTMLElement | null) => {
+      if (!triggerElement) {
+        return;
+      }
+
+      const rect = triggerElement.getBoundingClientRect();
+      const estimatedPanelWidth = 288;
+      const viewportPadding = 24;
+      const nextPlacement: "left" | "bottom" =
+        rect.left >= estimatedPanelWidth + viewportPadding ? "left" : "bottom";
+
+      setInfoPopoverPlacement((prev) =>
+        prev[nodeId] === nextPlacement
+          ? prev
+          : { ...prev, [nodeId]: nextPlacement },
+      );
+    },
+    [],
+  );
 
   const handleNodeOffline = useCallback((nodeId: number) => {
     setNodeList((prev) =>
@@ -1654,20 +1678,19 @@ export default function NodePage() {
                   node.connectionStatus,
                 );
                 const hasRemark = Boolean(node.remark?.trim());
-                const metaCount =
-                  1 +
-                  (isRemoteNode ? 1 : 0) +
-                  (node.expiryTime && node.expiryTime > 0 && node.renewalCycle
-                    ? 1
-                    : 0) +
-                  (hasRemark ? 1 : 0);
+                const hasExpiryInfo = Boolean(
+                  node.expiryTime && node.expiryTime > 0 && node.renewalCycle,
+                );
+                const hasInfoTrigger = hasRemark || hasExpiryInfo;
+                const infoCount = Number(hasExpiryInfo) + Number(hasRemark);
+                const infoPlacement = infoPopoverPlacement[node.id] ?? "left";
 
                 return (
                   <SortableItem key={node.id} id={node.id}>
                     {(listeners) => (
                       <Card
                         key={node.id}
-                        className={`group relative shadow-sm border border-divider hover:shadow-md transition-shadow duration-200 overflow-hidden h-full flex flex-col ${expiryMeta.accentClassName}`}
+                        className={`group relative overflow-visible shadow-sm border border-divider hover:shadow-md transition-shadow duration-200 h-full flex flex-col ${expiryMeta.accentClassName}`}
                       >
                         <CardHeader className="pb-3 md:pb-3">
                           <div className="flex justify-between items-start w-full gap-3">
@@ -1707,67 +1730,72 @@ export default function NodePage() {
                               </div>
                             </div>
                             <div className="ml-2 flex-shrink-0 self-start">
-                              <details className="relative">
-                                <summary className="flex cursor-pointer list-none items-center gap-1.5 rounded-full border border-divider/80 bg-background/95 px-2.5 py-1 text-[11px] font-medium text-default-600 shadow-sm transition hover:border-default-300 hover:text-foreground [&::-webkit-details-marker]:hidden">
-                                  <span>信息</span>
-                                  <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-default-100 px-1 text-[10px] text-default-500">
-                                    {metaCount}
-                                  </span>
+                              {hasInfoTrigger && (
+                                <div className="group/info relative">
+                                  <button
+                                    aria-label={`查看节点信息，共 ${infoCount} 项`}
+                                    className="relative flex h-7 w-7 items-center justify-center rounded-full border border-divider/80 bg-background/95 text-default-500 shadow-sm transition hover:border-default-300 hover:text-foreground focus-visible:border-default-300 focus-visible:text-foreground focus-visible:outline-none"
+                                    onFocus={(event) =>
+                                      updateInfoPopoverPlacement(
+                                        node.id,
+                                        event.currentTarget,
+                                      )
+                                    }
+                                    onMouseEnter={(event) =>
+                                      updateInfoPopoverPlacement(
+                                        node.id,
+                                        event.currentTarget,
+                                      )
+                                    }
+                                    type="button"
+                                  >
                                   <svg
                                     aria-hidden="true"
-                                    className="h-3 w-3"
+                                    className="h-3.5 w-3.5"
                                     fill="none"
                                     stroke="currentColor"
                                     viewBox="0 0 24 24"
                                   >
                                     <path
-                                      d="M19 9l-7 7-7-7"
+                                      d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
                                       strokeLinecap="round"
                                       strokeLinejoin="round"
-                                      strokeWidth={2}
+                                      strokeWidth={1.8}
                                     />
                                   </svg>
-                                </summary>
-                                <div className="absolute right-0 top-full z-30 mt-2 w-[min(19rem,calc(100vw-3rem))] rounded-xl border border-divider/80 bg-background/95 p-3 shadow-xl backdrop-blur">
+                                  {hasRemark && (
+                                    <span className="absolute -right-1 -top-1 flex h-2.5 w-2.5 rounded-full border border-background bg-default-300 shadow-sm dark:bg-default-500" />
+                                  )}
+                                </button>
+                                <div
+                                  className={`pointer-events-none invisible absolute z-30 w-72 max-w-[min(18rem,calc(100vw-4rem))] rounded-xl border border-divider/80 bg-background/98 p-3 opacity-0 shadow-xl backdrop-blur transition-all duration-150 group-hover/info:visible group-hover/info:pointer-events-auto group-hover/info:opacity-100 group-focus-within/info:visible group-focus-within/info:pointer-events-auto group-focus-within/info:opacity-100 ${
+                                    infoPlacement === "bottom"
+                                      ? "right-0 top-[calc(100%+0.75rem)] translate-y-1 group-hover/info:translate-y-0 group-focus-within/info:translate-y-0"
+                                      : "right-[calc(100%+0.75rem)] top-1/2 -translate-y-1/2 translate-x-1 group-hover/info:translate-x-0 group-focus-within/info:translate-x-0"
+                                  }`}
+                                >
                                   <div className="space-y-3">
-                                    <div className="space-y-2">
-                                      <div className="text-[11px] font-medium text-default-500">
-                                        标签
-                                      </div>
-                                      <div className="flex flex-wrap gap-1.5">
-                                        {isRemoteNode && (
+                                    {hasExpiryInfo && (
+                                      <div className="space-y-2">
+                                        <div className="text-[11px] font-medium text-default-500">
+                                          到期提醒
+                                        </div>
+                                        <div className="flex flex-wrap gap-1.5">
                                           <Chip
                                             className="text-[10px] h-5 px-1 flex-shrink-0"
-                                            color="secondary"
+                                            color={expiryMeta.tone}
                                             size="sm"
+                                            title={`${formatNodeRenewalTime(expiryMeta.nextDueTime)} (${getNodeRenewalCycleLabel(node.renewalCycle)})`}
                                             variant="flat"
                                           >
-                                            远程
+                                            {expiryMeta.label}
                                           </Chip>
-                                        )}
-                                        <Chip
-                                          className="text-[10px] h-5 px-1"
-                                          color={connectionStatusMeta.color}
-                                          size="sm"
-                                          variant="flat"
-                                        >
-                                          {connectionStatusMeta.text}
-                                        </Chip>
-                                        {node.expiryTime &&
-                                          node.expiryTime > 0 &&
-                                          node.renewalCycle && (
-                                            <Chip
-                                              className="text-[10px] h-5 px-1 flex-shrink-0"
-                                              color={expiryMeta.tone}
-                                              size="sm"
-                                              title={`${formatNodeRenewalTime(expiryMeta.nextDueTime)} (${getNodeRenewalCycleLabel(node.renewalCycle)})`}
-                                              variant="flat"
-                                            >
-                                              {expiryMeta.label}
-                                            </Chip>
-                                          )}
+                                        </div>
+                                        <div className="rounded-lg border border-divider/80 bg-default-50/80 px-3 py-2 text-xs leading-5 text-default-700">
+                                          {formatNodeRenewalTime(expiryMeta.nextDueTime)}
+                                        </div>
                                       </div>
-                                    </div>
+                                    )}
 
                                     {hasRemark && (
                                       <div className="space-y-2">
@@ -1784,7 +1812,8 @@ export default function NodePage() {
                                     )}
                                   </div>
                                 </div>
-                              </details>
+                                </div>
+                              )}
                             </div>
                           </div>
                         </CardHeader>
