@@ -1015,63 +1015,36 @@ const SortableCompactTableRow = ({
         </div>
       </TableCell>
       <TableCell
-        className={`${selectedIds.has(forward.id) ? "bg-primary-50/70 dark:bg-primary-900/40" : ""}`}
+        className={`max-w-[220px] ${selectedIds.has(forward.id) ? "bg-primary-50/70 dark:bg-primary-900/40" : ""}`}
       >
-        <span
-          className="text-sm font-mono font-medium cursor-pointer hover:bg-default-200/50 rounded px-1 transition-colors"
-          onClick={() =>
-            copyToClipboard(
-              (forward.inIp || "").replace(/:\d+$/, "") || "默认IP",
-              "入口地址",
-            )
-          }
+        <button
+          className={`w-full truncate rounded-md bg-default-100/50 px-2.5 py-1.5 text-left font-mono text-xs font-medium text-default-700 transition-all ${
+            hasMultipleAddresses(forward.inIp)
+              ? "hover:bg-default-200 hover:shadow-sm cursor-pointer"
+              : "cursor-default"
+          }`}
+          title={formatInAddress(forward.inIp, forward.inPort)}
+          type="button"
+          onClick={() => showAddressModal(forward.inIp, forward.inPort, "入口端口")}
         >
-          {(forward.inIp || "").replace(/:\d+$/, "") || "默认IP"}
-        </span>
+          {formatInAddress(forward.inIp, forward.inPort)}
+        </button>
       </TableCell>
       <TableCell
-        className={`${selectedIds.has(forward.id) ? "bg-primary-50/70 dark:bg-primary-900/40" : ""}`}
+        className={`max-w-[240px] ${selectedIds.has(forward.id) ? "bg-primary-50/70 dark:bg-primary-900/40" : ""}`}
       >
-        <span
-          className="text-sm font-mono font-medium cursor-pointer hover:bg-default-200/50 rounded px-1 transition-colors"
-          onClick={() => copyToClipboard(forward.inPort.toString(), "入口端口")}
+        <button
+          className={`w-full truncate rounded-md bg-default-100/50 px-2.5 py-1.5 text-left font-mono text-xs font-medium text-default-700 transition-all ${
+            hasMultipleAddresses(forward.remoteAddr)
+              ? "hover:bg-default-200 hover:shadow-sm cursor-pointer"
+              : "cursor-default"
+          }`}
+          title={formatRemoteAddress(forward.remoteAddr)}
+          type="button"
+          onClick={() => showAddressModal(forward.remoteAddr, null, "目标地址")}
         >
-          {forward.inPort}
-        </span>
-      </TableCell>
-      {/* 入口端口点击复制 */}
-      <TableCell
-        className={`${selectedIds.has(forward.id) ? "bg-primary-50/70 dark:bg-primary-900/40" : ""}`}
-      >
-        <span
-          className="text-sm font-mono font-medium cursor-pointer hover:bg-default-200/50 rounded px-1 transition-colors"
-          onClick={() =>
-            copyToClipboard(
-              forward.remoteAddr.split(",")[0].replace(/:\d+$/, ""),
-              "落地地址",
-            )
-          }
-        >
-          {forward.remoteAddr.split(",")[0].replace(/:\d+$/, "")}
-        </span>
-        {forward.remoteAddr.includes(",") && (
-          <span className="text-primary-400 ml-0.5">...</span>
-        )}
-      </TableCell>
-      <TableCell
-        className={`${selectedIds.has(forward.id) ? "bg-primary-50/70 dark:bg-primary-900/40" : ""}`}
-      >
-        <span
-          className="text-sm font-mono font-medium cursor-pointer hover:bg-default-200/50 rounded px-1 transition-colors"
-          onClick={() =>
-            copyToClipboard(
-              forward.remoteAddr.split(",")[0].match(/:(\d+)$/)?.[1] || "",
-              "落地端口",
-            )
-          }
-        >
-          {forward.remoteAddr.split(",")[0].match(/:(\d+)$/)?.[1] || "-"}
-        </span>
+          {formatRemoteAddress(forward.remoteAddr)}
+        </button>
       </TableCell>
 
       <TableCell
@@ -4214,14 +4187,8 @@ export default function ForwardPage() {
                             ‾倍率
                           </sup>
                         </TableColumn>
-                        <TableColumn className="w-[150px]">
-                          入口地址
-                        </TableColumn>
-                        <TableColumn className="w-[80px]">端口</TableColumn>
-                        <TableColumn className="w-[120px]">
-                          落地地址
-                        </TableColumn>
-                        <TableColumn className="w-[80px]">端口</TableColumn>
+                        <TableColumn className="w-[180px]">入口</TableColumn>
+                        <TableColumn className="w-[180px]">目标</TableColumn>
                         <TableColumn className="w-[80px]">策略</TableColumn>
                         <TableColumn className="w-[100px]">用量</TableColumn>
                         <TableColumn className="w-[80px]">状态</TableColumn>
