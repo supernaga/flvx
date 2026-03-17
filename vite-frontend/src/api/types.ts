@@ -6,6 +6,7 @@ export interface NodeApiItem {
   remark?: string;
   expiryTime?: number;
   renewalCycle?: "month" | "quarter" | "year" | "";
+  expiryReminderDismissed?: number;
   syncError?: string;
   [key: string]: unknown;
 }

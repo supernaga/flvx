@@ -52,6 +52,7 @@ import {
   getNodeReleases,
   rollbackNode,
   getPeerRemoteUsageList,
+  dismissNodeExpiryReminder,
   type ReleaseChannel,
 } from "@/api";
 import { PageEmptyState, PageLoadingState } from "@/components/page-state";
@@ -84,6 +85,7 @@ interface Node {
   remark?: string;
   expiryTime?: number;
   renewalCycle?: NodeRenewalCycle;
+  expiryReminderDismissed?: number;
   ip: string;
   serverIp: string;
   serverIpV4?: string;
@@ -243,7 +245,7 @@ const SortableItem = ({
   children,
 }: {
   id: number;
-  children: (listeners: any) => any;
+  children: (listeners: any, attributes?: any) => any;
 }) => {
   const {
     attributes,
@@ -268,14 +270,8 @@ const SortableItem = ({
   };
 
   return (
-    <div
-      ref={setNodeRef}
-      style={style}
-      {...attributes}
-      className="overflow-visible h-full"
-      {...listeners}
-    >
-      {children(listeners)}
+    <div ref={setNodeRef} className="overflow-visible h-full" style={style}>
+      {children(listeners, attributes)}
     </div>
   );
 };
@@ -316,6 +312,8 @@ export default function NodePage() {
   const [submitLoading, setSubmitLoading] = useState(false);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
+  const [rollbackModalOpen, setRollbackModalOpen] = useState(false);
+  const [nodeToRollback, setNodeToRollback] = useState<Node | null>(null);
   const [nodeToDelete, setNodeToDelete] = useState<Node | null>(null);
   const [protocolDisabled, setProtocolDisabled] = useState(false);
   const [protocolDisabledReason, setProtocolDisabledReason] = useState("");
@@ -328,7 +326,7 @@ export default function NodePage() {
     serverHost: "",
     serverIpV4: "",
     serverIpV6: "",
-    port: "1000-65535",
+    port: "10000-65535",
     tcpListenAddr: "[::]",
     udpListenAddr: "[::]",
     interfaceName: "",
@@ -378,6 +376,7 @@ export default function NodePage() {
   const [upgradeProgress, setUpgradeProgress] = useState<
     Record<number, { stage: string; percent: number; message: string }>
   >({});
+
   const [infoPopoverPlacement, setInfoPopoverPlacement] = useState<
     Record<number, "left" | "bottom">
   >({});
@@ -900,7 +899,7 @@ export default function NodePage() {
       serverHost: normalizedHost,
       serverIpV4: normalizedV4,
       serverIpV6: normalizedV6,
-      port: node.port || "1000-65535",
+      port: node.port || "10000-65535",
       tcpListenAddr: node.tcpListenAddr || "[::]",
       udpListenAddr: node.udpListenAddr || "[::]",
       interfaceName: (node as any).interfaceName || "",
@@ -943,6 +942,24 @@ export default function NodePage() {
       toast.error("网络错误，请重试");
     } finally {
       setDeleteLoading(false);
+    }
+  };
+
+  const handleDismissExpiryReminder = async (nodeId: number) => {
+    try {
+      const res = await dismissNodeExpiryReminder(nodeId);
+
+      if (res.code === 0) {
+        setNodeList((prev) =>
+          prev.map((n) =>
+            n.id === nodeId ? { ...n, expiryReminderDismissed: 1 } : n,
+          ),
+        );
+      } else {
+        toast.error(res.msg || "操作失败");
+      }
+    } catch {
+      toast.error("网络错误，请重试");
     }
   };
 
@@ -1113,7 +1130,16 @@ export default function NodePage() {
   };
 
   // 回退节点
-  const handleRollbackNode = async (node: Node) => {
+  const handleRollbackNode = (node: Node) => {
+    setNodeToRollback(node);
+    setRollbackModalOpen(true);
+  };
+
+  const confirmRollback = async () => {
+    if (!nodeToRollback) return;
+    const node = nodeToRollback;
+
+    setRollbackModalOpen(false);
     setNodeList((prev) =>
       prev.map((n) => (n.id === node.id ? { ...n, rollbackLoading: true } : n)),
     );
@@ -1133,6 +1159,7 @@ export default function NodePage() {
           n.id === node.id ? { ...n, rollbackLoading: false } : n,
         ),
       );
+      setNodeToRollback(null);
     }
   };
 
@@ -1216,7 +1243,7 @@ export default function NodePage() {
       serverHost: "",
       serverIpV4: "",
       serverIpV6: "",
-      port: "1000-65535",
+      port: "10000-65535",
       tcpListenAddr: "[::]",
       udpListenAddr: "[::]",
       interfaceName: "",
@@ -1523,7 +1550,11 @@ export default function NodePage() {
             onPress={() => setActiveTab("local")}
           >
             本地节点
-            <Chip className="ml-1" size="sm" variant="flat">
+            <Chip
+              className="ml-1 shrink-0 whitespace-nowrap"
+              size="sm"
+              variant="flat"
+            >
               {localNodes.length}
             </Chip>
           </Button>
@@ -1535,7 +1566,11 @@ export default function NodePage() {
             onPress={() => setActiveTab("remote")}
           >
             远程节点
-            <Chip className="ml-1" size="sm" variant="flat">
+            <Chip
+              className="ml-1 shrink-0 whitespace-nowrap"
+              size="sm"
+              variant="flat"
+            >
               {remoteNodes.length}
             </Chip>
           </Button>
@@ -1557,7 +1592,17 @@ export default function NodePage() {
               value={currentSearchKeyword}
               onChange={setCurrentSearchKeyword}
               onClose={() => setIsSearchVisible(false)}
-              onOpen={() => setIsSearchVisible(true)}
+              onOpen={() => {
+                setIsSearchVisible(true);
+                setTimeout(() => {
+                  // 精准抓取带有“搜索”字样的输入框并强制聚焦
+                  const searchInput = document.querySelector(
+                    'input[placeholder*="搜索"]',
+                  );
+
+                  if (searchInput) (searchInput as HTMLElement).focus();
+                }, 150); // 150ms 刚好是 CSS 展开动画的时间
+              }}
             />
           </div>
 
@@ -1733,7 +1778,10 @@ export default function NodePage() {
                 );
                 const hasRemark = Boolean(node.remark?.trim());
                 const hasExpiryInfo = Boolean(
-                  node.expiryTime && node.expiryTime > 0 && node.renewalCycle,
+                  node.expiryTime &&
+                    node.expiryTime > 0 &&
+                    node.renewalCycle &&
+                    !node.expiryReminderDismissed,
                 );
                 const hasInfoTrigger = hasRemark || hasExpiryInfo;
                 const infoCount = Number(hasExpiryInfo) + Number(hasRemark);
@@ -1832,8 +1880,20 @@ export default function NodePage() {
                                     <div className="space-y-3">
                                       {hasExpiryInfo && (
                                         <div className="space-y-2">
-                                          <div className="text-[11px] font-medium text-default-500">
-                                            到期提醒
+                                          <div className="flex items-center justify-between">
+                                            <div className="text-[11px] font-medium text-default-500">
+                                              到期提醒
+                                            </div>
+                                            <button
+                                              className="text-[10px] text-default-400 hover:text-default-600 transition-colors"
+                                              type="button"
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                handleDismissExpiryReminder(node.id);
+                                              }}
+                                            >
+                                              关闭提醒
+                                            </button>
                                           </div>
                                           <div className="flex flex-wrap gap-1.5">
                                             <Chip
@@ -2030,7 +2090,7 @@ export default function NodePage() {
                                           {remoteUsage.usedPorts.map((port) => (
                                             <Chip
                                               key={`${node.id}-port-${port}`}
-                                              className="font-mono"
+                                              className="font-mono shrink-0 whitespace-nowrap"
                                               size="sm"
                                               variant="flat"
                                             >
@@ -2416,6 +2476,9 @@ export default function NodePage() {
       {/* 新增/编辑节点对话框 */}
       <Modal
         backdrop="blur"
+        classNames={{
+          base: "!w-[calc(100%-32px)] !mx-auto sm:!w-full rounded-2xl overflow-hidden",
+        }}
         isOpen={dialogVisible}
         placement="center"
         scrollBehavior="outside"
@@ -2485,10 +2548,11 @@ export default function NodePage() {
                 errorMessage={errors.expiryTime}
                 isInvalid={!!errors.expiryTime}
                 label="续费基准时间"
-                type="datetime-local"
+                max="9999-12-31"
+                type="date"
                 value={
                   form.expiryTime > 0
-                    ? new Date(form.expiryTime).toISOString().slice(0, 16)
+                    ? new Date(form.expiryTime).toISOString().slice(0, 10)
                     : ""
                 }
                 variant="bordered"
@@ -2509,11 +2573,11 @@ export default function NodePage() {
               />
 
               <Input
-                description="可选：不带协议、不带端口。建议在 IPv4 和 IPv6 都未填写时使用。至少填写一个 IPv4/IPv6/域名"
+                description="可选：不带协议、不带端口。建议在 IPv4 和 IPv6 都未填写时使用。至少填写一个 IPv4/IPv6 域名"
                 errorMessage={errors.serverHost}
                 isInvalid={!!errors.serverHost}
-                label="服务器域名/主机名"
-                placeholder="例如: node.example.com"
+                label="域名/主机名"
+                placeholder="例如: test.example.com"
                 value={form.serverHost}
                 variant="bordered"
                 onChange={(e) =>
@@ -2523,11 +2587,11 @@ export default function NodePage() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <Input
-                  description="双栈节点组隧道时优先使用 IPv4"
+                  description="填写一个 IPv4 地址"
                   errorMessage={errors.serverIpV4}
                   isInvalid={!!errors.serverIpV4}
-                  label="服务器IPv4"
-                  placeholder="例如: 203.0.113.10"
+                  label="IPv4 地址"
+                  placeholder="例如: 192.168.1.100"
                   value={form.serverIpV4}
                   variant="bordered"
                   onChange={(e) =>
@@ -2536,10 +2600,10 @@ export default function NodePage() {
                 />
 
                 <Input
-                  description="至少填写一个 IPv4/IPv6/域名"
+                  description="填写一个 IPv6 地址"
                   errorMessage={errors.serverIpV6}
                   isInvalid={!!errors.serverIpV6}
-                  label="服务器IPv6"
+                  label="IPv6 地址"
                   placeholder="例如: 2001:db8::10"
                   value={form.serverIpV6}
                   variant="bordered"
@@ -2553,11 +2617,11 @@ export default function NodePage() {
                 classNames={{
                   input: "font-mono",
                 }}
-                description="支持单个端口(80)、多个端口(80,443)或端口范围(1000-65535)，多个可用逗号分隔"
+                description="支持单个端口(80)、多个端口(80,443)或端口范围(10000-65535)，多个可用逗号分隔"
                 errorMessage={errors.port}
                 isInvalid={!!errors.port}
                 label="可用端口"
-                placeholder="例如: 80,443,1000-65535"
+                placeholder="例如: 80,443,10000-65535"
                 value={form.port}
                 variant="bordered"
                 onChange={(e) =>
@@ -2810,7 +2874,7 @@ export default function NodePage() {
               <Alert
                 className="mt-4"
                 color="primary"
-                description="服务器ip是你要添加的服务器的ip地址，不是面板的ip地址。"
+                description="节点ip地址是你要添加的入口/出口的ip地址，不是面板的ip地址。"
                 variant="flat"
               />
             </div>
@@ -2830,9 +2894,53 @@ export default function NodePage() {
         </ModalContent>
       </Modal>
 
+      {/* 回退确认模态框 */}
+      <Modal
+        backdrop="blur"
+        classNames={{
+          base: "!w-[calc(100%-32px)] !mx-auto sm:!w-full rounded-2xl overflow-hidden",
+        }}
+        isOpen={rollbackModalOpen}
+        placement="center"
+        scrollBehavior="outside"
+        size="2xl"
+        onOpenChange={setRollbackModalOpen}
+      >
+        <ModalContent>
+          {(onClose) => (
+            <>
+              <ModalHeader className="flex flex-col gap-1">
+                <h2 className="text-xl font-bold">确认回退</h2>
+              </ModalHeader>
+              <ModalBody>
+                <p>
+                  确定要将节点{" "}
+                  <strong>&quot;{nodeToRollback?.name}&quot;</strong>{" "}
+                  回退到上一个版本吗？
+                </p>
+                <p className="text-small text-default-500">
+                  节点将执行版本回退并自动重启，期间会导致节点短暂离线。
+                </p>
+              </ModalBody>
+              <ModalFooter>
+                <Button variant="light" onPress={onClose}>
+                  取消
+                </Button>
+                <Button color="secondary" onPress={confirmRollback}>
+                  确认回退
+                </Button>
+              </ModalFooter>
+            </>
+          )}
+        </ModalContent>
+      </Modal>
+
       {/* 删除确认模态框 */}
       <Modal
         backdrop="blur"
+        classNames={{
+          base: "!w-[calc(100%-32px)] !mx-auto sm:!w-full rounded-2xl overflow-hidden",
+        }}
         isOpen={deleteModalOpen}
         placement="center"
         scrollBehavior="outside"
@@ -2873,6 +2981,9 @@ export default function NodePage() {
 
       <Modal
         backdrop="blur"
+        classNames={{
+          base: "!w-[calc(100%-32px)] !mx-auto sm:!w-full rounded-2xl overflow-hidden",
+        }}
         isOpen={installSelectorOpen}
         placement="center"
         size="md"
@@ -2923,6 +3034,9 @@ export default function NodePage() {
       {/* 安装命令模态框 */}
       <Modal
         backdrop="blur"
+        classNames={{
+          base: "!w-[calc(100%-32px)] !mx-auto sm:!w-full rounded-2xl overflow-hidden",
+        }}
         isOpen={installCommandModal}
         placement="center"
         scrollBehavior="outside"
@@ -2977,6 +3091,9 @@ export default function NodePage() {
       {/* 版本选择升级模态框 */}
       <Modal
         backdrop="blur"
+        classNames={{
+          base: "!w-[calc(100%-32px)] !mx-auto sm:!w-full rounded-2xl overflow-hidden",
+        }}
         isOpen={upgradeModalOpen}
         placement="center"
         scrollBehavior="outside"
@@ -3039,7 +3156,7 @@ export default function NodePage() {
                                 : ""}
                               {r.channel === "dev" && (
                                 <Chip
-                                  className="ml-1"
+                                  className="ml-1 shrink-0 whitespace-nowrap"
                                   color="warning"
                                   size="sm"
                                   variant="flat"
@@ -3080,6 +3197,9 @@ export default function NodePage() {
       {/* 批量删除确认模态框 */}
       <Modal
         backdrop="blur"
+        classNames={{
+          base: "!w-[calc(100%-32px)] !mx-auto sm:!w-full rounded-2xl overflow-hidden",
+        }}
         isOpen={batchDeleteModalOpen}
         placement="center"
         scrollBehavior="outside"
@@ -3119,6 +3239,9 @@ export default function NodePage() {
       </Modal>
 
       <Modal
+        classNames={{
+          base: "!w-[calc(100%-32px)] !mx-auto sm:!w-full rounded-2xl overflow-hidden",
+        }}
         isOpen={isFilterModalOpen}
         placement="center"
         size="md"

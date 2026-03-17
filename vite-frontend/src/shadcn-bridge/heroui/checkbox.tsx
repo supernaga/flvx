@@ -11,6 +11,7 @@ export interface CheckboxProps
   classNames?: Record<string, string>;
   color?: string;
   isDisabled?: boolean;
+  isIndeterminate?: boolean;
   isSelected?: boolean;
   onValueChange?: (value: boolean) => void;
   size?: string;
@@ -20,6 +21,7 @@ export function Checkbox({
   children,
   className,
   isDisabled,
+  isIndeterminate,
   isSelected,
   onValueChange,
   ...props
@@ -32,6 +34,10 @@ export function Checkbox({
     onValueChange?.(value === true);
   };
 
+  const checkedValue: boolean | "indeterminate" = isIndeterminate
+    ? "indeterminate"
+    : Boolean(isSelected);
+
   return (
     <div
       className={cn(
@@ -41,7 +47,7 @@ export function Checkbox({
       )}
     >
       <BaseCheckbox
-        checked={Boolean(isSelected)}
+        checked={checkedValue}
         disabled={isDisabled}
         onCheckedChange={handleCheckedChange}
         {...props}

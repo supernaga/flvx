@@ -478,6 +478,29 @@ func (h *Handler) nodeUpdateOrder(w http.ResponseWriter, r *http.Request) {
 	response.WriteJSON(w, response.OKEmpty())
 }
 
+func (h *Handler) nodeDismissExpiryReminder(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		response.WriteJSON(w, response.ErrDefault("请求失败"))
+		return
+	}
+	var req struct {
+		ID int64 `json:"id"`
+	}
+	if err := decodeJSON(r.Body, &req); err != nil {
+		response.WriteJSON(w, response.ErrDefault("请求参数错误"))
+		return
+	}
+	if req.ID <= 0 {
+		response.WriteJSON(w, response.ErrDefault("节点ID不能为空"))
+		return
+	}
+	if err := h.repo.UpdateNodeExpiryReminderDismissed(req.ID, 1); err != nil {
+		response.WriteJSON(w, response.Err(-2, err.Error()))
+		return
+	}
+	response.WriteJSON(w, response.OKEmpty())
+}
+
 func (h *Handler) nodeBatchDelete(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		response.WriteJSON(w, response.ErrDefault("请求失败"))
@@ -1840,7 +1863,27 @@ func (h *Handler) forwardDelete(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) forwardForceDelete(w http.ResponseWriter, r *http.Request) {
-	h.forwardDelete(w, r)
+	id := idFromBody(r, w)
+	if id <= 0 {
+		return
+	}
+	_, _, _, err := h.resolveForwardAccess(r, id)
+	if err != nil {
+		if errors.Is(err, errForwardNotFound) {
+			response.WriteJSON(w, response.ErrDefault("转发不存在"))
+			return
+		}
+		response.WriteJSON(w, response.Err(-2, err.Error()))
+		return
+	}
+
+	// Force delete: remove DB record without touching node services.
+	// This is used when nodes are offline or service deletion fails.
+	if err := h.deleteForwardByID(id); err != nil {
+		response.WriteJSON(w, response.Err(-2, err.Error()))
+		return
+	}
+	response.WriteJSON(w, response.OKEmpty())
 }
 
 func (h *Handler) forwardPause(w http.ResponseWriter, r *http.Request) {
@@ -3085,7 +3128,7 @@ func (h *Handler) applyTunnelRuntime(state *tunnelCreateState) ([]int64, []int64
 			}
 			createdChains = append(createdChains, chainNode.NodeID)
 
-			serviceData := buildTunnelChainServiceConfig(state.TunnelID, chainNode, state.Nodes[chainNode.NodeID])
+			serviceData := buildTunnelChainServiceConfig(state.TunnelID, chainNode, state.Nodes[chainNode.NodeID], len(nextTargets))
 			if err := h.addTunnelServiceOnNode(chainNode.NodeID, state.TunnelID, serviceData); err != nil {
 				return createdChains, createdServices, fmt.Errorf("转发链节点 %s 下发服务失败: %w", nodeDisplayName(state.Nodes[chainNode.NodeID]), err)
 			}
@@ -3097,7 +3140,7 @@ func (h *Handler) applyTunnelRuntime(state *tunnelCreateState) ([]int64, []int64
 		if node := state.Nodes[outNode.NodeID]; node != nil && node.IsRemote == 1 {
 			continue
 		}
-		serviceData := buildTunnelChainServiceConfig(state.TunnelID, outNode, state.Nodes[outNode.NodeID])
+		serviceData := buildTunnelChainServiceConfig(state.TunnelID, outNode, state.Nodes[outNode.NodeID], 1)
 		if err := h.addTunnelServiceOnNode(outNode.NodeID, state.TunnelID, serviceData); err != nil {
 			return createdChains, createdServices, fmt.Errorf("出口节点 %s 下发服务失败: %w", nodeDisplayName(state.Nodes[outNode.NodeID]), err)
 		}
@@ -3248,7 +3291,7 @@ func buildTunnelChainConfig(tunnelID int64, fromNodeID int64, targets []tunnelRu
 	}, nil
 }
 
-func buildTunnelChainServiceConfig(tunnelID int64, chainNode tunnelRuntimeNode, node *nodeRecord) []map[string]interface{} {
+func buildTunnelChainServiceConfig(tunnelID int64, chainNode tunnelRuntimeNode, node *nodeRecord, nextHopCandidateCount int) []map[string]interface{} {
 	if node == nil {
 		return nil
 	}
@@ -3258,6 +3301,9 @@ func buildTunnelChainServiceConfig(tunnelID int64, chainNode tunnelRuntimeNode, 
 	}
 	if isTLSTunnelProtocol(protocol) {
 		handlerCfg["metadata"] = map[string]interface{}{"nodelay": true}
+	}
+	if nextHopCandidateCount > 1 {
+		handlerCfg["retries"] = nextHopCandidateCount - 1
 	}
 	service := map[string]interface{}{
 		"name":    fmt.Sprintf("%d_tls", tunnelID),

@@ -88,6 +88,8 @@ export const getNodeInstallCommand = (
 export const updateNodeOrder = (data: {
   nodes: Array<{ id: number; inx: number }>;
 }) => Network.post("/node/update-order", data);
+export const dismissNodeExpiryReminder = (id: number) =>
+  Network.post("/node/dismiss-expiry-reminder", { id });
 export const checkNodeStatus = (nodeId?: number) => {
   const params = nodeId ? { nodeId } : {};
 

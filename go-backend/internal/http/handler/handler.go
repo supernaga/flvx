@@ -148,6 +148,7 @@ func (h *Handler) Register(mux *http.ServeMux) {
 	mux.HandleFunc("/api/v1/node/delete", h.nodeDelete)
 	mux.HandleFunc("/api/v1/node/install", h.nodeInstall)
 	mux.HandleFunc("/api/v1/node/update-order", h.nodeUpdateOrder)
+	mux.HandleFunc("/api/v1/node/dismiss-expiry-reminder", h.nodeDismissExpiryReminder)
 	mux.HandleFunc("/api/v1/node/batch-delete", h.nodeBatchDelete)
 	mux.HandleFunc("/api/v1/node/check-status", h.nodeCheckStatus)
 	mux.HandleFunc("/api/v1/node/upgrade", h.nodeUpgrade)

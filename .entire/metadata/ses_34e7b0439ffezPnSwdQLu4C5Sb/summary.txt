@@ -1,5 +1,0 @@
-✅ 完成！
-
-- 提交: `9cf9f4f` (feat: add comprehensive migration test for legacy columns)
-- PR: [#245](https://github.com/Sagit-chu/flvx/pull/245) 已合并
-- 新 tag: `2.1.7-alpha6` 已发布
