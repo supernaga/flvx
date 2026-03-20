@@ -12,6 +12,12 @@ import React from "react";
 import "@/themes/loader";
 
 import { ThemeProvider as ThemeContextProvider } from "@/themes/context";
+import { initThemeSystem } from "@/themes/registry";
+
+// Restore saved theme SYNCHRONOUSLY at module load time — before first render.
+// This ensures the CSS tokens are injected before any component renders,
+// preventing a flash of the default theme.
+initThemeSystem();
 
 interface ThemeProviderProps {
   children: React.ReactNode;

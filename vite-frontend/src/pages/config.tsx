@@ -27,6 +27,7 @@ import {
   type AnnouncementData,
 } from "@/api";
 import { BackIcon, SettingsIcon } from "@/components/icons";
+import { ThemeSettings } from "@/components/theme-settings";
 import { isAdmin } from "@/utils/auth";
 import { getCachedConfigs, configCache, updateSiteConfig } from "@/config/site";
 import {
@@ -978,6 +979,11 @@ export default function ConfigPage() {
           </div>
         </CardBody>
       </Card>
+
+      {/* 主题设置 */}
+      <div className="mt-6">
+        <ThemeSettings />
+      </div>
 
       {hasChanges && (
         <Card className="mt-4 bg-warning-50 dark:bg-warning-900/20 border-warning-200 dark:border-warning-800 shadow-sm overflow-hidden">

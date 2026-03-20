@@ -29,7 +29,6 @@ import {
   getSavedMode,
   saveMode,
   getEffectiveMode,
-  initThemeSystem,
   registerTheme,
   unregisterTheme,
   type ThemeMode,
@@ -94,11 +93,6 @@ interface ThemeProviderProps {
 export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
   // Re-render whenever register changes
   useSyncExternalStore(originalSubscribe, getSnapshot);
-
-  // Initialise on mount
-  useEffect(() => {
-    initThemeSystem();
-  }, []);
 
   // Listen for system mode changes
   useEffect(() => {

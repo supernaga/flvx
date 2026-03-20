@@ -10,7 +10,6 @@ import { Switch } from "@/shadcn-bridge/heroui/switch";
 import { reinitializeBaseURL } from "@/api/network";
 import { getConfigByName, updateConfig } from "@/api";
 import { BackIcon } from "@/components/icons";
-import { ThemeSettings } from "@/components/theme-settings";
 import {
   type UpdateReleaseChannel,
   getUpdateReleaseChannel,
@@ -182,7 +181,6 @@ export const SettingsPage = () => {
       {/* 内容区域 */}
       <div className="max-w-4xl mx-auto px-4 py-6">
         <div className="space-y-6">
-          <ThemeSettings />
           <Card className="border border-gray-200 dark:border-gray-700">
             <CardBody className="p-6">
               <h2 className="text-lg font-medium text-gray-900 dark:text-white mb-4">

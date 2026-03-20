@@ -85,11 +85,22 @@
           shortcutIconLink.removeAttribute('type');
         }
 
-        // 立即检测系统主题并应用
-        const isDarkMode = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+        // 立即检测主题并应用（优先读取 localStorage 中的用户偏好）
+        var savedMode = '';
+        try { savedMode = localStorage.getItem('flvx:theme') || ''; } catch (_) {}
+
+        var useDark;
+        if (savedMode === 'dark') {
+          useDark = true;
+        } else if (savedMode === 'light') {
+          useDark = false;
+        } else {
+          // "system" 或无保存：跟随系统
+          useDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+        }
         
         // 立即设置主题类，避免闪烁
-        if (isDarkMode) {
+        if (useDark) {
           document.documentElement.classList.add('dark');
           document.documentElement.style.colorScheme = 'dark';
         } else {
@@ -97,9 +108,13 @@
           document.documentElement.style.colorScheme = 'light';
         }
         
-        // 监听系统主题变化
-        if (window.matchMedia) {
+        // 仅在"跟随系统"模式下监听系统主题变化
+        if ((!savedMode || savedMode === 'system') && window.matchMedia) {
           window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function(e) {
+            // 运行时可能已由 React 接管，这里仅做 fallback
+            var currentMode = '';
+            try { currentMode = localStorage.getItem('flvx:theme') || ''; } catch (_) {}
+            if (currentMode && currentMode !== 'system') return; // 用户已手动选择，不干预
             if (e.matches) {
               document.documentElement.classList.add('dark');
               document.documentElement.style.colorScheme = 'dark';
