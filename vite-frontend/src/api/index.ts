@@ -486,11 +486,22 @@ export const updateServiceMonitor = (data: ServiceMonitorMutationPayload) =>
 export const deleteServiceMonitor = (id: number) =>
   Network.post("/monitor/services/delete", { id });
 
-export const getServiceMonitorResults = (monitorId: number, limit = 100) =>
-  Network.get<ServiceMonitorResultApiItem[]>(
+export const getServiceMonitorResults = (
+  monitorId: number,
+  options?: { limit?: number; start?: number; end?: number },
+) => {
+  const params: Record<string, string> = {};
+  if (options?.start != null && options?.end != null) {
+    params.start = String(options.start);
+    params.end = String(options.end);
+  } else if (options?.limit != null) {
+    params.limit = String(options.limit);
+  }
+  return Network.get<ServiceMonitorResultApiItem[]>(
     `/monitor/services/${monitorId}/results`,
-    { limit: String(limit) },
+    params,
   );
+};
 
 export const getServiceMonitorLatestResults = () =>
   Network.get<ServiceMonitorResultApiItem[]>(

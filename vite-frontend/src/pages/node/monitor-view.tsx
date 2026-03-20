@@ -314,7 +314,7 @@ export function MonitorView({ nodeMap, viewMode = "grid" }: MonitorViewProps) {
   });
   const [submitLoading, setSubmitLoading] = useState(false);
   const [activeServiceMonitorId, setActiveServiceMonitorId] = useState<number | null>(null);
-  const [serviceMonitorRangeLimit, setServiceMonitorRangeLimit] = useState(50);
+  const [serviceMonitorRangeMs, setServiceMonitorRangeMs] = useState(60 * 60 * 1000);
 
   const [accessDenied, setAccessDenied] = useState<string | null>(null);
   const [resultsModalOpen, setResultsModalOpen] = useState(false);
@@ -526,9 +526,12 @@ export function MonitorView({ nodeMap, viewMode = "grid" }: MonitorViewProps) {
   }, []);
 
   const loadMonitorResults = useCallback(
-    async (monitorId: number, limit = 20) => {
+    async (monitorId: number, options?: { rangeMs?: number; limit?: number }) => {
       try {
-        const response = await getServiceMonitorResults(monitorId, limit);
+        const apiOptions = options?.rangeMs != null
+          ? { start: Date.now() - options.rangeMs, end: Date.now() }
+          : { limit: options?.limit ?? 100 };
+        const response = await getServiceMonitorResults(monitorId, apiOptions);
 
         if (response.code === 0 && response.data) {
           setMonitorResults((prev) => ({
@@ -600,7 +603,7 @@ export function MonitorView({ nodeMap, viewMode = "grid" }: MonitorViewProps) {
     if (!resultsMonitorId) return;
     setResultsLoading(true);
     try {
-      await loadMonitorResults(resultsMonitorId, resultsLimit);
+      await loadMonitorResults(resultsMonitorId, { limit: resultsLimit });
     } finally {
       setResultsLoading(false);
     }
@@ -641,11 +644,11 @@ export function MonitorView({ nodeMap, viewMode = "grid" }: MonitorViewProps) {
     void loadResultsForModal();
   }, [resultsModalOpen, resultsMonitorId, resultsLimit, loadResultsForModal]);
 
-  // Reload results for the active service monitor chart when range limit changes
+  // Reload results for the active service monitor chart when time range changes
   useEffect(() => {
     if (!activeServiceMonitorId) return;
-    void loadMonitorResults(activeServiceMonitorId, serviceMonitorRangeLimit);
-  }, [activeServiceMonitorId, serviceMonitorRangeLimit, loadMonitorResults]);
+    void loadMonitorResults(activeServiceMonitorId, { rangeMs: serviceMonitorRangeMs });
+  }, [activeServiceMonitorId, serviceMonitorRangeMs, loadMonitorResults]);
 
   const chartData = metrics.map((m) => ({
     time: formatTimestamp(m.timestamp, metricsRangeMs),
@@ -1322,10 +1325,8 @@ export function MonitorView({ nodeMap, viewMode = "grid" }: MonitorViewProps) {
             const activeStale = resolvedActiveMonitor ? isResultStale(resolvedActiveMonitor, activeLatestResult) : false;
             const activeResults = resolvedActiveMonitorId != null ? (monitorResults[resolvedActiveMonitorId] || []) : [];
             const activeLatencyData = [...activeResults]
-              .slice(0, serviceMonitorRangeLimit)
-              .reverse()
               .map((r) => ({
-                time: formatTimestamp(r.timestamp),
+                time: formatTimestamp(r.timestamp, serviceMonitorRangeMs),
                 latency: r.success === 1 ? r.latencyMs : null,
                 success: r.success,
               }));
@@ -1336,24 +1337,23 @@ export function MonitorView({ nodeMap, viewMode = "grid" }: MonitorViewProps) {
                   <h3 className="text-lg font-semibold">服务监控图表</h3>
                   <div className="flex items-center gap-2">
                     <Select
-                      className="w-28"
-                      selectedKeys={[String(serviceMonitorRangeLimit)]}
+                      className="w-36"
+                      selectedKeys={[String(serviceMonitorRangeMs)]}
                       onSelectionChange={(keys) => {
                         const v = Number(Array.from(keys)[0]);
-                        if (v > 0) setServiceMonitorRangeLimit(v);
+                        if (v > 0) setServiceMonitorRangeMs(v);
                       }}
                     >
-                      <SelectItem key="20">20条</SelectItem>
-                      <SelectItem key="50">50条</SelectItem>
-                      <SelectItem key="100">100条</SelectItem>
-                      <SelectItem key="200">200条</SelectItem>
+                      <SelectItem key={String(60 * 60 * 1000)}>1小时</SelectItem>
+                      <SelectItem key={String(6 * 60 * 60 * 1000)}>6小时</SelectItem>
+                      <SelectItem key={String(24 * 60 * 60 * 1000)}>24小时</SelectItem>
                     </Select>
                     {resolvedActiveMonitorId != null && (
                       <Button
                         size="sm"
                         variant="flat"
                         onPress={() => {
-                          void loadMonitorResults(resolvedActiveMonitorId, serviceMonitorRangeLimit);
+                          void loadMonitorResults(resolvedActiveMonitorId, { rangeMs: serviceMonitorRangeMs });
                         }}
                       >
                         <RefreshCw className="w-4 h-4 mr-1" />
@@ -1391,7 +1391,7 @@ export function MonitorView({ nodeMap, viewMode = "grid" }: MonitorViewProps) {
                                 setActiveServiceMonitorId(monitor.id);
                                 // Load results for this monitor if not loaded
                                 if (!monitorResults[monitor.id] || monitorResults[monitor.id].length <= 1) {
-                                  void loadMonitorResults(monitor.id, serviceMonitorRangeLimit);
+                                  void loadMonitorResults(monitor.id, { rangeMs: serviceMonitorRangeMs });
                                 }
                               }}
                             >
