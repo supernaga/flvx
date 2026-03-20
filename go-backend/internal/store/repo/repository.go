@@ -51,6 +51,7 @@ type NodeMetric = model.NodeMetric
 type TunnelMetric = model.TunnelMetric
 type ServiceMonitor = model.ServiceMonitor
 type ServiceMonitorResult = model.ServiceMonitorResult
+type TunnelQuality = model.TunnelQuality
 
 // ─── Repository ──────────────────────────────────────────────────────
 
@@ -191,6 +192,7 @@ func autoMigrateAll(db *gorm.DB) error {
 		&model.TunnelMetric{},
 		&model.ServiceMonitor{},
 		&model.ServiceMonitorResult{},
+		&model.TunnelQuality{},
 	}
 
 	if db.Dialector.Name() != "sqlite" {

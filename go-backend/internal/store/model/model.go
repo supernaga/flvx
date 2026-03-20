@@ -714,3 +714,20 @@ type ServiceMonitorResult struct {
 }
 
 func (ServiceMonitorResult) TableName() string { return "service_monitor_result" }
+
+// TunnelQuality stores periodic probe results for a tunnel.
+// Unlike the old upsert model, rows accumulate for history/charting.
+// Old rows are pruned periodically (default: keep 24h).
+type TunnelQuality struct {
+	ID                 int64   `gorm:"primaryKey;autoIncrement" json:"id"`
+	TunnelID           int64   `gorm:"column:tunnel_id;not null;index:idx_tunnel_quality_tunnel_time,priority:1" json:"tunnelId"`
+	EntryToExitLatency float64 `gorm:"column:entry_to_exit_latency" json:"entryToExitLatency"`
+	ExitToBingLatency  float64 `gorm:"column:exit_to_bing_latency" json:"exitToBingLatency"`
+	EntryToExitLoss    float64 `gorm:"column:entry_to_exit_loss" json:"entryToExitLoss"`
+	ExitToBingLoss     float64 `gorm:"column:exit_to_bing_loss" json:"exitToBingLoss"`
+	Success            int     `gorm:"not null;default:1" json:"success"`
+	ErrorMessage       string  `gorm:"column:error_message;type:text" json:"errorMessage,omitempty"`
+	Timestamp          int64   `gorm:"not null;index:idx_tunnel_quality_tunnel_time,priority:2;index:idx_tunnel_quality_time" json:"timestamp"`
+}
+
+func (TunnelQuality) TableName() string { return "tunnel_quality" }

@@ -42,6 +42,8 @@ type Handler struct {
 
 	upgradeMu              sync.Mutex
 	pendingUpgradeRedeploy map[int64]struct{}
+
+	qualityProber *tunnelQualityProber
 }
 
 type loginRequest struct {
@@ -93,6 +95,7 @@ func New(repo *repo.Repository, jwtSecret string) *Handler {
 		pendingUpgradeRedeploy: make(map[int64]struct{}),
 	}
 	h.healthCheck = health.NewChecker(repo, h.wsServer)
+	h.qualityProber = newTunnelQualityProber(h)
 	h.wsServer.SetNodeOnlineHook(h.onNodeOnline)
 	h.wsServer.SetNodeMetricHook(func(nodeID int64, info ws.SystemInfo) {
 		metricInfo := metrics.SystemInfo{
@@ -229,6 +232,7 @@ func (h *Handler) Register(mux *http.ServeMux) {
 	mux.HandleFunc("/api/v1/monitor/nodes/", h.monitorNodeMetricsHandler)
 	mux.HandleFunc("/api/v1/monitor/nodes", h.monitorNodeListHandler)
 	mux.HandleFunc("/api/v1/monitor/tunnels", h.monitorTunnelListHandler)
+	mux.HandleFunc("/api/v1/monitor/tunnels/quality", h.monitorTunnelQualityHandler)
 	mux.HandleFunc("/api/v1/monitor/tunnels/", h.monitorTunnelMetrics)
 	mux.HandleFunc("/api/v1/monitor/services", h.monitorServiceListHandler)
 	mux.HandleFunc("/api/v1/monitor/services/create", h.monitorServiceCreate)

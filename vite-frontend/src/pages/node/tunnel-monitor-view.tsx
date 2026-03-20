@@ -1,7 +1,7 @@
 import type {
   MonitorTunnelApiItem,
   TunnelMetricApiItem,
-  TunnelDiagnosisApiItem,
+  TunnelQualityApiItem,
 } from "@/api/types";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -13,6 +13,7 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
+  Legend,
 } from "recharts";
 import {
   RefreshCw,
@@ -23,16 +24,15 @@ import {
   ArrowRightLeft,
   Wifi,
   WifiOff,
-  Stethoscope,
 } from "lucide-react";
 import toast from "react-hot-toast";
 
 import {
   getMonitorTunnels,
   getTunnelMetrics,
-  diagnoseTunnel,
+  getMonitorTunnelQuality,
+  getMonitorTunnelQualityHistory,
 } from "@/api";
-import { diagnoseTunnelStream } from "@/api/diagnosis-stream";
 import { getDiagnosisQualityDisplay } from "@/pages/tunnel/diagnosis";
 import { Button } from "@/shadcn-bridge/heroui/button";
 import { Card, CardBody, CardHeader } from "@/shadcn-bridge/heroui/card";
@@ -51,18 +51,7 @@ interface TunnelMonitorViewProps {
   viewMode?: "list" | "grid";
 }
 
-const METRICS_MAX_ROWS = 5000;
-
-interface TunnelQuality {
-  loading: boolean;
-  entryToExitLatency?: number;
-  exitToBingLatency?: number;
-  entryToExitLoss?: number;
-  exitToBingLoss?: number;
-  results?: TunnelDiagnosisApiItem[];
-  timestamp?: number;
-  error?: string;
-}
+const QUALITY_POLL_INTERVAL = 10_000; // 10 seconds
 
 const formatTimestamp = (ts: number, rangeMs?: number): string => {
   const date = new Date(ts);
@@ -80,6 +69,7 @@ const formatTimestamp = (ts: number, rangeMs?: number): string => {
   return date.toLocaleTimeString("zh-CN", {
     hour: "2-digit",
     minute: "2-digit",
+    second: "2-digit",
   });
 };
 
@@ -93,32 +83,60 @@ const formatBytes = (bytes: number): string => {
   return `${parseFloat((bytes / Math.pow(k, i)).toFixed(2))} ${sizes[i]}`;
 };
 
+/** Render a colored latency value with appropriate visual cue */
+function LatencyDisplay({ value, loading }: { value?: number; loading?: boolean }) {
+  if (loading) {
+    return <RefreshCw className="w-3 h-3 animate-spin inline text-primary" />;
+  }
+  if (value === undefined || value < 0) {
+    return <span className="text-default-400">-</span>;
+  }
+  const ms = value.toFixed(0);
+  let colorClass = "text-success";
+  if (value > 200) colorClass = "text-danger";
+  else if (value > 100) colorClass = "text-warning";
+  else if (value > 50) colorClass = "text-primary";
+
+  return <span className={`font-mono text-xs font-semibold ${colorClass}`}>{ms}ms</span>;
+}
+
+/** Animated pulse dot for live status */
+function LiveDot() {
+  return (
+    <span className="relative flex h-2 w-2">
+      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-success opacity-75" />
+      <span className="relative inline-flex rounded-full h-2 w-2 bg-success" />
+    </span>
+  );
+}
+
 export function TunnelMonitorView({ viewMode = "grid" }: TunnelMonitorViewProps) {
   const [tunnels, setTunnels] = useState<MonitorTunnelApiItem[]>([]);
   const [tunnelsLoading, setTunnelsLoading] = useState(false);
   const [tunnelsError, setTunnelsError] = useState<string | null>(null);
   const [accessDenied, setAccessDenied] = useState<string | null>(null);
 
+  // Quality data from backend periodic probing (latest per tunnel)
+  const [qualityMap, setQualityMap] = useState<Record<number, TunnelQualityApiItem>>({});
+  const [qualityLoading, setQualityLoading] = useState(false);
+  const qualityTimerRef = useRef<number | null>(null);
+
   // Detail view state
   const [detailTunnelId, setDetailTunnelId] = useState<number | null>(null);
+
+  // Quality history for chart (mirrors service monitor results)
+  const [qualityHistory, setQualityHistory] = useState<TunnelQualityApiItem[]>([]);
+  const [qualityHistoryLoading, setQualityHistoryLoading] = useState(false);
+  const [qualityHistoryError, setQualityHistoryError] = useState<string | null>(null);
+  const [qualityRangeMs, setQualityRangeMs] = useState(60 * 60 * 1000);
+
+  // Tunnel traffic metrics for chart
   const [tunnelMetrics, setTunnelMetrics] = useState<TunnelMetricApiItem[]>([]);
   const [tunnelMetricsLoading, setTunnelMetricsLoading] = useState(false);
   const [tunnelMetricsError, setTunnelMetricsError] = useState<string | null>(null);
-  const [, setTunnelMetricsTruncated] = useState(false);
   const [tunnelRangeMs, setTunnelRangeMs] = useState(60 * 60 * 1000);
 
-  // Tunnel quality (diagnosis) state
-  const [tunnelQualities, setTunnelQualities] = useState<Record<number, TunnelQuality>>({});
-  const diagnosisAbortRef = useRef<Record<number, AbortController>>({});
-
-  // Cleanup abort controllers on unmount
-  useEffect(() => {
-    return () => {
-      Object.values(diagnosisAbortRef.current).forEach((c) => c.abort());
-      diagnosisAbortRef.current = {};
-    };
-  }, []);
-
+  // --- Load tunnel list ---
   const loadTunnels = useCallback(async (options?: { silent?: boolean }) => {
     const silent = options?.silent ?? false;
     if (!silent) setTunnelsLoading(true);
@@ -161,7 +179,75 @@ export function TunnelMonitorView({ viewMode = "grid" }: TunnelMonitorViewProps)
     return () => window.clearInterval(timer);
   }, [loadTunnels]);
 
-  // Load tunnel metrics for detail view
+  // --- Load quality snapshots (auto-polling every 10s) ---
+  const loadQuality = useCallback(async (options?: { silent?: boolean }) => {
+    const silent = options?.silent ?? false;
+    if (!silent) setQualityLoading(true);
+    try {
+      const response = await getMonitorTunnelQuality();
+      if (response.code === 0 && Array.isArray(response.data)) {
+        const map: Record<number, TunnelQualityApiItem> = {};
+        for (const q of response.data) {
+          map[q.tunnelId] = q;
+        }
+        setQualityMap(map);
+      }
+    } catch {
+      // Silently ignore quality load failures
+    } finally {
+      if (!silent) setQualityLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void loadQuality();
+  }, [loadQuality]);
+
+  useEffect(() => {
+    qualityTimerRef.current = window.setInterval(() => {
+      void loadQuality({ silent: true });
+    }, QUALITY_POLL_INTERVAL);
+
+    return () => {
+      if (qualityTimerRef.current) {
+        window.clearInterval(qualityTimerRef.current);
+      }
+    };
+  }, [loadQuality]);
+
+  // --- Load quality history for detail chart ---
+  const loadQualityHistory = useCallback(
+    async (tunnelId: number, options?: { silent?: boolean }) => {
+      const silent = options?.silent ?? false;
+      if (!silent) setQualityHistoryLoading(true);
+      try {
+        const end = Date.now();
+        const start = end - qualityRangeMs;
+        const response = await getMonitorTunnelQualityHistory(tunnelId, start, end);
+
+        if (response.code === 0 && Array.isArray(response.data)) {
+          setQualityHistoryError(null);
+          setQualityHistory(response.data);
+          return;
+        }
+        if (response.code === 403) {
+          setAccessDenied(response.msg || "暂无监控权限");
+          return;
+        }
+        setQualityHistoryError(response.msg || "加载质量历史失败");
+        if (!silent) toast.error(response.msg || "加载质量历史失败");
+      } catch {
+        if (!silent) {
+          setQualityHistoryError("加载质量历史失败");
+        }
+      } finally {
+        if (!silent) setQualityHistoryLoading(false);
+      }
+    },
+    [qualityRangeMs],
+  );
+
+  // --- Load tunnel traffic metrics for detail chart ---
   const loadTunnelMetrics = useCallback(
     async (tunnelId: number, options?: { silent?: boolean }) => {
       const silent = options?.silent ?? false;
@@ -172,27 +258,16 @@ export function TunnelMonitorView({ viewMode = "grid" }: TunnelMonitorViewProps)
         const response = await getTunnelMetrics(tunnelId, start, end);
 
         if (response.code === 0 && Array.isArray(response.data)) {
-          setAccessDenied(null);
           setTunnelMetricsError(null);
-          setTunnelMetricsTruncated(response.data.length >= METRICS_MAX_ROWS);
           const ordered = [...response.data].sort(
             (a, b) => a.timestamp - b.timestamp,
           );
           setTunnelMetrics(ordered);
           return;
         }
-        if (response.code === 403) {
-          setAccessDenied(response.msg || "暂无监控权限，请联系管理员授权");
-          setTunnelMetricsTruncated(false);
-          setTunnelMetricsError(null);
-          return;
-        }
-        setTunnelMetricsTruncated(false);
-        setTunnelMetricsError(response.msg || "加载隧道指标失败");
-        if (!silent) toast.error(response.msg || "加载隧道指标失败");
+        setTunnelMetricsError(response.msg || "加载流量数据失败");
       } catch {
-        setTunnelMetricsTruncated(false);
-        if (!silent) setTunnelMetricsError("加载隧道指标失败");
+        if (!silent) setTunnelMetricsError("加载流量数据失败");
       } finally {
         if (!silent) setTunnelMetricsLoading(false);
       }
@@ -202,169 +277,32 @@ export function TunnelMonitorView({ viewMode = "grid" }: TunnelMonitorViewProps)
 
   useEffect(() => {
     if (detailTunnelId) {
+      void loadQualityHistory(detailTunnelId);
       void loadTunnelMetrics(detailTunnelId);
     }
-  }, [detailTunnelId, loadTunnelMetrics]);
+  }, [detailTunnelId, loadQualityHistory, loadTunnelMetrics]);
 
+  // Auto-refresh detail charts
   useEffect(() => {
     if (!detailTunnelId) return;
     const timer = window.setInterval(() => {
+      void loadQualityHistory(detailTunnelId, { silent: true });
       void loadTunnelMetrics(detailTunnelId, { silent: true });
     }, 30_000);
 
     return () => window.clearInterval(timer);
-  }, [detailTunnelId, loadTunnelMetrics]);
+  }, [detailTunnelId, loadQualityHistory, loadTunnelMetrics]);
 
-  // Diagnose tunnel quality
-  const diagnoseTunnelQuality = useCallback(async (tunnelId: number) => {
-    // Abort if already running
-    if (diagnosisAbortRef.current[tunnelId]) {
-      diagnosisAbortRef.current[tunnelId].abort();
-    }
-    const abortController = new AbortController();
-    diagnosisAbortRef.current[tunnelId] = abortController;
+  // Chart data for quality history
+  const qualityChartData = qualityHistory.map((q) => ({
+    time: formatTimestamp(q.timestamp, qualityRangeMs),
+    entryToExit: q.entryToExitLatency >= 0 ? q.entryToExitLatency : null,
+    exitToBing: q.exitToBingLatency >= 0 ? q.exitToBingLatency : null,
+    entryToExitLoss: q.entryToExitLoss,
+    exitToBingLoss: q.exitToBingLoss,
+  }));
 
-    setTunnelQualities((prev) => ({
-      ...prev,
-      [tunnelId]: { loading: true },
-    }));
-
-    try {
-      // Try stream first
-      const results: TunnelDiagnosisApiItem[] = [];
-      const streamResult = await diagnoseTunnelStream(
-        tunnelId,
-        {
-          onItem: (payload) => {
-            results.push(payload.result);
-          },
-          onError: (msg) => {
-            setTunnelQualities((prev) => ({
-              ...prev,
-              [tunnelId]: { loading: false, error: msg },
-            }));
-          },
-        },
-        abortController.signal,
-      );
-
-      if (streamResult.fallback) {
-        // Fallback to non-stream API
-        try {
-          const response = await diagnoseTunnel(tunnelId);
-          if (response.code === 0 && response.data?.results) {
-            const apiResults = response.data.results;
-            const quality = extractQualityFromResults(apiResults);
-            setTunnelQualities((prev) => ({
-              ...prev,
-              [tunnelId]: {
-                loading: false,
-                ...quality,
-                results: apiResults,
-                timestamp: Date.now(),
-              },
-            }));
-          } else {
-            setTunnelQualities((prev) => ({
-              ...prev,
-              [tunnelId]: { loading: false, error: response.msg || "诊断失败" },
-            }));
-          }
-        } catch {
-          setTunnelQualities((prev) => ({
-            ...prev,
-            [tunnelId]: { loading: false, error: "诊断请求失败" },
-          }));
-        }
-        return;
-      }
-
-      // Process stream results
-      if (results.length > 0) {
-        const quality = extractQualityFromResults(results);
-        setTunnelQualities((prev) => ({
-          ...prev,
-          [tunnelId]: {
-            loading: false,
-            ...quality,
-            results,
-            timestamp: Date.now(),
-          },
-        }));
-      } else {
-        setTunnelQualities((prev) => ({
-          ...prev,
-          [tunnelId]: { loading: false, error: "未获取到诊断结果" },
-        }));
-      }
-    } catch {
-      if (!abortController.signal.aborted) {
-        setTunnelQualities((prev) => ({
-          ...prev,
-          [tunnelId]: { loading: false, error: "诊断失败" },
-        }));
-      }
-    } finally {
-      delete diagnosisAbortRef.current[tunnelId];
-    }
-  }, []);
-
-  const extractQualityFromResults = (
-    results: TunnelDiagnosisApiItem[],
-  ): Pick<TunnelQuality, "entryToExitLatency" | "exitToBingLatency" | "entryToExitLoss" | "exitToBingLoss"> => {
-    // The diagnosis results contain hop-by-hop tests
-    // We look for entry→exit (hop between entry and exit nodes)
-    // and exit→Bing (the last hop to external target like bing.com)
-    let entryToExitLatency: number | undefined;
-    let exitToBingLatency: number | undefined;
-    let entryToExitLoss: number | undefined;
-    let exitToBingLoss: number | undefined;
-
-    for (const r of results) {
-      if (!r.success) continue;
-
-      // Entry to Exit: chainType transitions from 1 (entry) to 3 (exit)
-      if (r.fromChainType === 1 && r.toChainType === 3) {
-        entryToExitLatency = r.averageTime;
-        entryToExitLoss = r.packetLoss;
-      }
-      // Or if it's a mid-chain to exit
-      if (r.fromChainType === 2 && r.toChainType === 3) {
-        // Use this if no direct entry→exit
-        if (entryToExitLatency === undefined) {
-          entryToExitLatency = r.averageTime;
-          entryToExitLoss = r.packetLoss;
-        }
-      }
-
-      // Exit to external target (Bing / external)
-      if (r.toChainType === undefined || r.toChainType === 0) {
-        // This typically means it's the exit node testing external
-        if (r.fromChainType === 3) {
-          exitToBingLatency = r.averageTime;
-          exitToBingLoss = r.packetLoss;
-        }
-      }
-    }
-
-    // If no chainType-based matching, use position-based heuristics
-    if (entryToExitLatency === undefined && exitToBingLatency === undefined) {
-      const successResults = results.filter((r) => r.success);
-      if (successResults.length >= 2) {
-        entryToExitLatency = successResults[0].averageTime;
-        entryToExitLoss = successResults[0].packetLoss;
-        exitToBingLatency = successResults[successResults.length - 1].averageTime;
-        exitToBingLoss = successResults[successResults.length - 1].packetLoss;
-      } else if (successResults.length === 1) {
-        entryToExitLatency = successResults[0].averageTime;
-        entryToExitLoss = successResults[0].packetLoss;
-      }
-    }
-
-    return { entryToExitLatency, exitToBingLatency, entryToExitLoss, exitToBingLoss };
-  };
-
-  // Chart data
+  // Chart data for traffic metrics
   const tunnelChartData = tunnelMetrics.map((m) => ({
     time: formatTimestamp(m.timestamp, tunnelRangeMs),
     bytesIn: m.bytesIn,
@@ -391,14 +329,35 @@ export function TunnelMonitorView({ viewMode = "grid" }: TunnelMonitorViewProps)
   // Aggregate stats
   const tunnelStats = useMemo(() => {
     const enabled = tunnels.filter((t) => t.status === 1).length;
-    const disabled = tunnels.length - enabled;
-    const diagnosed = Object.keys(tunnelQualities).filter((k) => {
-      const q = tunnelQualities[Number(k)];
-      return q && !q.loading && !q.error;
-    }).length;
 
-    return { total: tunnels.length, enabled, disabled, diagnosed };
-  }, [tunnels, tunnelQualities]);
+    return { total: tunnels.length, enabled };
+  }, [tunnels]);
+
+  // Last quality update timestamp
+  const lastQualityUpdate = useMemo(() => {
+    let latest = 0;
+    for (const q of Object.values(qualityMap)) {
+      if (q.timestamp > latest) latest = q.timestamp;
+    }
+    return latest > 0 ? new Date(latest).toLocaleTimeString("zh-CN") : null;
+  }, [qualityMap]);
+
+  /** Shared time range Select component */
+  const TimeRangeSelect = ({ value, onChange }: { value: number; onChange: (v: number) => void }) => (
+    <Select
+      className="w-36"
+      selectedKeys={[String(value)]}
+      onSelectionChange={(keys) => {
+        const v = Number(Array.from(keys)[0]);
+        if (v > 0) onChange(v);
+      }}
+    >
+      <SelectItem key={String(15 * 60 * 1000)}>15分钟</SelectItem>
+      <SelectItem key={String(60 * 60 * 1000)}>1小时</SelectItem>
+      <SelectItem key={String(6 * 60 * 60 * 1000)}>6小时</SelectItem>
+      <SelectItem key={String(24 * 60 * 60 * 1000)}>24小时</SelectItem>
+    </Select>
+  );
 
   // =====================
   // RENDER
@@ -423,7 +382,7 @@ export function TunnelMonitorView({ viewMode = "grid" }: TunnelMonitorViewProps)
 
   // ===== DETAIL VIEW =====
   if (detailTunnelId && detailTunnel) {
-    const quality = tunnelQualities[detailTunnelId];
+    const quality = qualityMap[detailTunnelId];
 
     return (
       <div className="space-y-6">
@@ -431,6 +390,7 @@ export function TunnelMonitorView({ viewMode = "grid" }: TunnelMonitorViewProps)
         <div className="flex items-center gap-3 flex-wrap">
           <Button size="sm" variant="flat" onPress={() => {
             setDetailTunnelId(null);
+            setQualityHistory([]);
             setTunnelMetrics([]);
           }}>
             <ArrowLeft className="w-4 h-4 mr-1" />
@@ -449,25 +409,27 @@ export function TunnelMonitorView({ viewMode = "grid" }: TunnelMonitorViewProps)
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <Card className="border border-divider/60 shadow-sm hover:shadow-md transition-shadow bg-gradient-to-br from-background to-default-50/50">
             <CardBody className="py-3 px-4 flex flex-col items-center justify-center min-h-[5rem]">
-              <span className="text-[11px] text-default-500 mb-1.5">入口 → 出口 延迟</span>
-              <span className={`text-sm font-semibold font-mono ${quality?.entryToExitLatency !== undefined ? "text-primary" : ""}`}>
-                {quality?.loading ? "检测中..." : quality?.entryToExitLatency !== undefined ? `${quality.entryToExitLatency.toFixed(0)}ms` : "-"}
+              <span className="text-[11px] text-default-500 mb-1.5 flex items-center gap-1">
+                <Zap className="w-3 h-3" />
+                入口 → 出口 延迟
               </span>
+              <LatencyDisplay value={quality?.entryToExitLatency} loading={qualityLoading} />
             </CardBody>
           </Card>
           <Card className="border border-divider/60 shadow-sm hover:shadow-md transition-shadow bg-gradient-to-br from-background to-default-50/50">
             <CardBody className="py-3 px-4 flex flex-col items-center justify-center min-h-[5rem]">
-              <span className="text-[11px] text-default-500 mb-1.5">出口 → Bing 延迟</span>
-              <span className={`text-sm font-semibold font-mono ${quality?.exitToBingLatency !== undefined ? "text-success" : ""}`}>
-                {quality?.loading ? "检测中..." : quality?.exitToBingLatency !== undefined ? `${quality.exitToBingLatency.toFixed(0)}ms` : "-"}
+              <span className="text-[11px] text-default-500 mb-1.5 flex items-center gap-1">
+                <Globe className="w-3 h-3" />
+                出口 → Bing 延迟
               </span>
+              <LatencyDisplay value={quality?.exitToBingLatency} loading={qualityLoading} />
             </CardBody>
           </Card>
           <Card className="border border-divider/60 shadow-sm hover:shadow-md transition-shadow bg-gradient-to-br from-background to-default-50/50">
             <CardBody className="py-3 px-4 flex flex-col items-center justify-center min-h-[5rem]">
               <span className="text-[11px] text-default-500 mb-1.5">入口 → 出口 丢包</span>
               <span className={`text-sm font-semibold font-mono ${(quality?.entryToExitLoss ?? 0) > 0 ? "text-warning" : ""}`}>
-                {quality?.loading ? "检测中..." : quality?.entryToExitLoss !== undefined ? `${quality.entryToExitLoss.toFixed(1)}%` : "-"}
+                {quality?.entryToExitLoss !== undefined ? `${quality.entryToExitLoss.toFixed(1)}%` : "-"}
               </span>
             </CardBody>
           </Card>
@@ -475,105 +437,110 @@ export function TunnelMonitorView({ viewMode = "grid" }: TunnelMonitorViewProps)
             <CardBody className="py-3 px-4 flex flex-col items-center justify-center min-h-[5rem]">
               <span className="text-[11px] text-default-500 mb-1.5">出口 → Bing 丢包</span>
               <span className={`text-sm font-semibold font-mono ${(quality?.exitToBingLoss ?? 0) > 0 ? "text-warning" : ""}`}>
-                {quality?.loading ? "检测中..." : quality?.exitToBingLoss !== undefined ? `${quality.exitToBingLoss.toFixed(1)}%` : "-"}
+                {quality?.exitToBingLoss !== undefined ? `${quality.exitToBingLoss.toFixed(1)}%` : "-"}
               </span>
             </CardBody>
           </Card>
         </div>
 
-        {/* Diagnose Button */}
-        <div className="flex items-center gap-2">
-          <Button
-            size="sm"
-            color="primary"
-            variant="flat"
-            isLoading={quality?.loading}
-            onPress={() => diagnoseTunnelQuality(detailTunnelId)}
-          >
-            <Stethoscope className="w-4 h-4 mr-1" />
-            {quality?.timestamp ? "重新检测质量" : "检测隧道质量"}
-          </Button>
+        {/* Auto-probe status */}
+        <div className="flex items-center gap-2 text-xs text-default-500">
+          <LiveDot />
+          <span>自动探测中（每10秒）</span>
           {quality?.timestamp && (
-            <span className="text-xs text-default-500">
-              上次检测: {new Date(quality.timestamp).toLocaleTimeString("zh-CN")}
+            <span className="text-default-400">
+              · 最近更新: {new Date(quality.timestamp).toLocaleTimeString("zh-CN")}
             </span>
           )}
-          {quality?.error && (
-            <span className="text-xs text-danger">{quality.error}</span>
+          {quality?.errorMessage && (
+            <span className="text-danger ml-2">{quality.errorMessage}</span>
           )}
         </div>
 
-        {/* Diagnosis Details */}
-        {quality?.results && quality.results.length > 0 && (
-          <Card>
-            <CardHeader>
-              <h3 className="text-lg font-semibold">诊断详情</h3>
-            </CardHeader>
-            <CardBody>
-              <Table aria-label="诊断结果">
-                <TableHeader>
-                  <TableColumn>描述</TableColumn>
-                  <TableColumn>节点</TableColumn>
-                  <TableColumn>目标</TableColumn>
-                  <TableColumn>延迟</TableColumn>
-                  <TableColumn>丢包</TableColumn>
-                  <TableColumn>状态</TableColumn>
-                </TableHeader>
-                <TableBody>
-                  {quality.results.map((r, idx) => (
-                    <TableRow key={idx}>
-                      <TableCell>
-                        <span className="text-sm">{r.description || "-"}</span>
-                      </TableCell>
-                      <TableCell>
-                        <span className="text-sm font-mono">{r.nodeName || "-"}</span>
-                      </TableCell>
-                      <TableCell>
-                        <span className="text-sm font-mono">
-                          {r.targetIp || "-"}{r.targetPort ? `:${r.targetPort}` : ""}
-                        </span>
-                      </TableCell>
-                      <TableCell>
-                        <span className="text-sm font-mono">
-                          {r.averageTime !== undefined ? `${r.averageTime.toFixed(0)}ms` : "-"}
-                        </span>
-                      </TableCell>
-                      <TableCell>
-                        <span className="text-sm font-mono">
-                          {r.packetLoss !== undefined ? `${r.packetLoss.toFixed(1)}%` : "-"}
-                        </span>
-                      </TableCell>
-                      <TableCell>
-                        <Chip size="sm" color={r.success ? "success" : "danger"} variant="flat">
-                          {r.success ? "成功" : "失败"}
-                        </Chip>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </CardBody>
-          </Card>
-        )}
-
-        {/* Tunnel traffic chart */}
+        {/* ====== Quality History Chart (mirrors service monitor chart) ====== */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
-            <h3 className="text-lg font-semibold">隧道流量趋势</h3>
+            <h3 className="text-lg font-semibold">质量趋势</h3>
             <div className="flex items-center gap-2">
-              <Select
-                className="w-36"
-                selectedKeys={[String(tunnelRangeMs)]}
-                onSelectionChange={(keys) => {
-                  const v = Number(Array.from(keys)[0]);
-                  if (v > 0) setTunnelRangeMs(v);
-                }}
+              <TimeRangeSelect value={qualityRangeMs} onChange={setQualityRangeMs} />
+              <Button
+                isLoading={qualityHistoryLoading}
+                size="sm"
+                variant="flat"
+                onPress={() => detailTunnelId && loadQualityHistory(detailTunnelId)}
               >
-                <SelectItem key={String(15 * 60 * 1000)}>15分钟</SelectItem>
-                <SelectItem key={String(60 * 60 * 1000)}>1小时</SelectItem>
-                <SelectItem key={String(6 * 60 * 60 * 1000)}>6小时</SelectItem>
-                <SelectItem key={String(24 * 60 * 60 * 1000)}>24小时</SelectItem>
-              </Select>
+                <RefreshCw className="w-4 h-4 mr-1" />
+                刷新
+              </Button>
+            </div>
+          </CardHeader>
+          <CardBody>
+            {qualityHistoryLoading ? (
+              <div className="flex justify-center py-8"><RefreshCw className="w-6 h-6 animate-spin" /></div>
+            ) : qualityHistoryError ? (
+              <div className="text-center py-8 text-danger text-sm">{qualityHistoryError}</div>
+            ) : qualityChartData.length > 0 ? (
+              <div className="h-64">
+                <ResponsiveContainer height="100%" width="100%">
+                  <LineChart data={qualityChartData}>
+                    <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
+                    <XAxis dataKey="time" fontSize={11} tick={{ fill: "#888" }} />
+                    <YAxis
+                      fontSize={11}
+                      tick={{ fill: "#888" }}
+                      tickFormatter={(v) => `${Number(v).toFixed(0)}ms`}
+                      label={{ value: "延迟 (ms)", angle: -90, position: "insideLeft", style: { fontSize: 11, fill: "#888" } }}
+                    />
+                    <Tooltip
+                      contentStyle={{ backgroundColor: "rgba(0,0,0,0.85)", border: "none", borderRadius: "8px", fontSize: 12 }}
+                      labelStyle={{ color: "#fff" }}
+                      formatter={(value: unknown, name: string) => {
+                        const n = Number(value);
+                        if (!Number.isFinite(n)) return "-";
+                        const label = name === "entryToExit" ? "入口→出口" : name === "exitToBing" ? "出口→Bing" : name;
+                        return [`${n.toFixed(1)}ms`, label];
+                      }}
+                    />
+                    <Legend
+                      formatter={(value: string) => {
+                        if (value === "entryToExit") return "入口→出口";
+                        if (value === "exitToBing") return "出口→Bing";
+                        return value;
+                      }}
+                    />
+                    <Line
+                      connectNulls
+                      dataKey="entryToExit"
+                      dot={false}
+                      name="entryToExit"
+                      stroke="#10b981"
+                      strokeWidth={2}
+                      type="monotone"
+                    />
+                    <Line
+                      connectNulls
+                      dataKey="exitToBing"
+                      dot={false}
+                      name="exitToBing"
+                      stroke="#3b82f6"
+                      strokeWidth={2}
+                      type="monotone"
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            ) : (
+              <div className="text-center py-8 text-default-500">暂无质量历史数据</div>
+            )}
+          </CardBody>
+        </Card>
+
+        {/* ====== Traffic Chart (unchanged) ====== */}
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <h3 className="text-lg font-semibold">流量趋势</h3>
+            <div className="flex items-center gap-2">
+              <TimeRangeSelect value={tunnelRangeMs} onChange={setTunnelRangeMs} />
               <Button
                 isLoading={tunnelMetricsLoading}
                 size="sm"
@@ -590,25 +557,26 @@ export function TunnelMonitorView({ viewMode = "grid" }: TunnelMonitorViewProps)
               <div className="flex justify-center py-8"><RefreshCw className="w-6 h-6 animate-spin" /></div>
             ) : tunnelMetricsError ? (
               <div className="text-center py-8 text-danger text-sm">{tunnelMetricsError}</div>
-            ) : tunnelMetrics.length > 0 ? (
+            ) : tunnelChartData.length > 0 ? (
               <div className="h-64">
                 <ResponsiveContainer height="100%" width="100%">
                   <LineChart data={tunnelChartData}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="time" fontSize={12} />
-                    <YAxis fontSize={12} tickFormatter={tunnelYAxisTickFormatter} />
+                    <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
+                    <XAxis dataKey="time" fontSize={11} tick={{ fill: "#888" }} />
+                    <YAxis fontSize={11} tick={{ fill: "#888" }} tickFormatter={tunnelYAxisTickFormatter} />
                     <Tooltip
-                      contentStyle={{ backgroundColor: "rgba(0,0,0,0.8)", border: "none", borderRadius: "8px" }}
+                      contentStyle={{ backgroundColor: "rgba(0,0,0,0.85)", border: "none", borderRadius: "8px", fontSize: 12 }}
                       labelStyle={{ color: "#fff" }}
                       formatter={tunnelTooltipFormatter}
                     />
+                    <Legend />
                     <Line dataKey="bytesIn" dot={false} name="入站流量" stroke="#10b981" strokeWidth={2} type="monotone" />
                     <Line dataKey="bytesOut" dot={false} name="出站流量" stroke="#ef4444" strokeWidth={2} type="monotone" />
                   </LineChart>
                 </ResponsiveContainer>
               </div>
             ) : (
-              <div className="text-center py-8 text-default-500">暂无指标数据</div>
+              <div className="text-center py-8 text-default-500">暂无流量数据</div>
             )}
           </CardBody>
         </Card>
@@ -616,13 +584,16 @@ export function TunnelMonitorView({ viewMode = "grid" }: TunnelMonitorViewProps)
     );
   }
 
-  // ===== LIST/GRID VIEW =====
+  // ===== LIST/GRID VIEW (unchanged) =====
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center gap-3 mb-1">
         <Chip color="primary" size="sm" variant="flat">隧道 {tunnelStats.enabled}/{tunnelStats.total}</Chip>
-        {tunnelStats.diagnosed > 0 && (
-          <Chip color="success" size="sm" variant="flat">已诊断 {tunnelStats.diagnosed}</Chip>
+        {lastQualityUpdate && (
+          <div className="flex items-center gap-1.5 text-xs text-default-500">
+            <LiveDot />
+            <span>自动探测 · 更新于 {lastQualityUpdate}</span>
+          </div>
         )}
         <div className="ml-auto">
           <Button isLoading={tunnelsLoading} size="sm" variant="flat" onPress={() => loadTunnels()}>
@@ -643,9 +614,9 @@ export function TunnelMonitorView({ viewMode = "grid" }: TunnelMonitorViewProps)
       {viewMode === "grid" ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {tunnels.map((tunnel) => {
-            const quality = tunnelQualities[tunnel.id];
+            const quality = qualityMap[tunnel.id];
             const isEnabled = tunnel.status === 1;
-            const overallQuality = quality?.entryToExitLatency !== undefined
+            const overallQuality = quality?.entryToExitLatency !== undefined && quality.entryToExitLatency >= 0
               ? getDiagnosisQualityDisplay(quality.entryToExitLatency, quality.entryToExitLoss ?? 0)
               : null;
 
@@ -655,10 +626,7 @@ export function TunnelMonitorView({ viewMode = "grid" }: TunnelMonitorViewProps)
                 className="group relative overflow-hidden shadow-sm border border-divider dark:border-default-100 hover:-translate-y-1 hover:shadow-lg transition-all duration-300 h-full flex flex-col cursor-pointer bg-background"
                 onClick={() => setDetailTunnelId(tunnel.id)}
               >
-                {/* Top gradient bar */}
                 <div className={`absolute top-0 left-0 right-0 h-1 ${isEnabled ? "bg-success" : "bg-danger"}`} />
-
-                {/* Decorative background glow */}
                 <div className={`absolute -right-8 -top-8 w-24 h-24 rounded-full blur-2xl opacity-10 transition-opacity group-hover:opacity-20 ${isEnabled ? "bg-success" : "bg-danger"}`} />
 
                 <CardHeader className="pb-2 pt-5 px-5 flex flex-row justify-between items-start gap-4">
@@ -684,59 +652,34 @@ export function TunnelMonitorView({ viewMode = "grid" }: TunnelMonitorViewProps)
                 </CardHeader>
 
                 <CardBody className="py-3 px-5 flex-1 flex flex-col justify-end gap-3 z-10 w-full overflow-hidden">
-                  {/* Quality metrics */}
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-1">
                       <div className="text-[10px] text-default-500 flex items-center gap-1">
                         <Zap className="w-3 h-3" />
                         入口→出口
                       </div>
-                      <span className="font-mono text-xs font-semibold">
-                        {quality?.loading ? (
-                          <RefreshCw className="w-3 h-3 animate-spin inline" />
-                        ) : quality?.entryToExitLatency !== undefined ? (
-                          `${quality.entryToExitLatency.toFixed(0)}ms`
-                        ) : "-"}
-                      </span>
+                      <LatencyDisplay value={quality?.entryToExitLatency} />
                     </div>
                     <div className="space-y-1">
                       <div className="text-[10px] text-default-500 flex items-center gap-1">
                         <Globe className="w-3 h-3" />
                         出口→Bing
                       </div>
-                      <span className="font-mono text-xs font-semibold">
-                        {quality?.loading ? (
-                          <RefreshCw className="w-3 h-3 animate-spin inline" />
-                        ) : quality?.exitToBingLatency !== undefined ? (
-                          `${quality.exitToBingLatency.toFixed(0)}ms`
-                        ) : "-"}
-                      </span>
+                      <LatencyDisplay value={quality?.exitToBingLatency} />
                     </div>
                   </div>
 
-                  {/* Action area */}
                   <div className="flex justify-between items-center pt-2 border-t border-divider/50">
-                    {quality?.error ? (
-                      <span className="text-[11px] text-danger truncate">{quality.error}</span>
+                    {quality?.errorMessage ? (
+                      <span className="text-[11px] text-danger truncate">{quality.errorMessage}</span>
                     ) : quality?.timestamp ? (
-                      <span className="text-[11px] text-default-500">
+                      <span className="text-[11px] text-default-500 flex items-center gap-1">
+                        <LiveDot />
                         {new Date(quality.timestamp).toLocaleTimeString("zh-CN")}
                       </span>
                     ) : (
-                      <span className="text-[11px] text-default-400">未检测</span>
+                      <span className="text-[11px] text-default-400">等待探测...</span>
                     )}
-                    <Button
-                      isIconOnly
-                      size="sm"
-                      variant="light"
-                      isLoading={quality?.loading}
-                      onPress={() => {
-                        diagnoseTunnelQuality(tunnel.id);
-                      }}
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <Stethoscope className="w-4 h-4 text-default-500" />
-                    </Button>
                   </div>
                 </CardBody>
               </Card>
@@ -752,13 +695,13 @@ export function TunnelMonitorView({ viewMode = "grid" }: TunnelMonitorViewProps)
               <TableColumn>入口→出口</TableColumn>
               <TableColumn>出口→Bing</TableColumn>
               <TableColumn>质量</TableColumn>
-              <TableColumn align="center">操作</TableColumn>
+              <TableColumn>更新时间</TableColumn>
             </TableHeader>
             <TableBody emptyContent="暂无隧道">
               {tunnels.map((tunnel) => {
-                const quality = tunnelQualities[tunnel.id];
+                const quality = qualityMap[tunnel.id];
                 const isEnabled = tunnel.status === 1;
-                const overallQuality = quality?.entryToExitLatency !== undefined
+                const overallQuality = quality?.entryToExitLatency !== undefined && quality.entryToExitLatency >= 0
                   ? getDiagnosisQualityDisplay(quality.entryToExitLatency, quality.entryToExitLoss ?? 0)
                   : null;
 
@@ -777,22 +720,10 @@ export function TunnelMonitorView({ viewMode = "grid" }: TunnelMonitorViewProps)
                       <span className="font-semibold text-sm whitespace-nowrap">{tunnel.name}</span>
                     </TableCell>
                     <TableCell>
-                      <span className="font-mono text-xs whitespace-nowrap">
-                        {quality?.loading ? (
-                          <RefreshCw className="w-3 h-3 animate-spin inline" />
-                        ) : quality?.entryToExitLatency !== undefined ? (
-                          `${quality.entryToExitLatency.toFixed(0)}ms`
-                        ) : "-"}
-                      </span>
+                      <LatencyDisplay value={quality?.entryToExitLatency} />
                     </TableCell>
                     <TableCell>
-                      <span className="font-mono text-xs whitespace-nowrap">
-                        {quality?.loading ? (
-                          <RefreshCw className="w-3 h-3 animate-spin inline" />
-                        ) : quality?.exitToBingLatency !== undefined ? (
-                          `${quality.exitToBingLatency.toFixed(0)}ms`
-                        ) : "-"}
-                      </span>
+                      <LatencyDisplay value={quality?.exitToBingLatency} />
                     </TableCell>
                     <TableCell>
                       {overallQuality ? (
@@ -804,18 +735,14 @@ export function TunnelMonitorView({ viewMode = "grid" }: TunnelMonitorViewProps)
                       )}
                     </TableCell>
                     <TableCell>
-                      <div className="flex justify-center gap-1">
-                        <Button
-                          isIconOnly
-                          size="sm"
-                          variant="light"
-                          isLoading={quality?.loading}
-                          onPress={() => diagnoseTunnelQuality(tunnel.id)}
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <Stethoscope className="w-4 h-4 text-default-500" />
-                        </Button>
-                      </div>
+                      {quality?.timestamp ? (
+                        <span className="text-xs text-default-500 flex items-center gap-1 whitespace-nowrap">
+                          <LiveDot />
+                          {new Date(quality.timestamp).toLocaleTimeString("zh-CN")}
+                        </span>
+                      ) : (
+                        <span className="text-xs text-default-400">-</span>
+                      )}
                     </TableCell>
                   </TableRow>
                 );
