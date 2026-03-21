@@ -386,27 +386,31 @@ export function MonitorView({ nodeMap, viewMode = "grid" }: MonitorViewProps) {
 
       const metric = raw as Record<string, unknown>;
       const receivedAt = Date.now();
-      const normalized: RealtimeNodeMetric = {
-        receivedAt,
-        cpuUsage: Number(metric.cpuUsage ?? metric.cpu_usage ?? 0),
-        memoryUsage: Number(metric.memoryUsage ?? metric.memory_usage ?? 0),
-        diskUsage: Number(metric.diskUsage ?? metric.disk_usage ?? 0),
-        netInBytes: Number(metric.netInBytes ?? metric.bytes_received ?? 0),
-        netOutBytes: Number(metric.netOutBytes ?? metric.bytes_transmitted ?? 0),
-        netInSpeed: Number(metric.netInSpeed ?? metric.net_in_speed ?? 0),
-        netOutSpeed: Number(metric.netOutSpeed ?? metric.net_out_speed ?? 0),
-        load1: Number(metric.load1 ?? 0),
-        load5: Number(metric.load5 ?? 0),
-        load15: Number(metric.load15 ?? 0),
-        tcpConns: Number(metric.tcpConns ?? metric.tcp_conns ?? 0),
-        udpConns: Number(metric.udpConns ?? metric.udp_conns ?? 0),
-        uptime: Number(metric.uptime ?? 0),
-      };
+      const incomingUptime = Number(metric.uptime ?? 0);
 
-      setRealtimeNodeMetrics((prev) => ({
-        ...prev,
-        [nodeId]: normalized,
-      }));
+      setRealtimeNodeMetrics((prev) => {
+        const normalized: RealtimeNodeMetric = {
+          receivedAt,
+          cpuUsage: Number(metric.cpuUsage ?? metric.cpu_usage ?? 0),
+          memoryUsage: Number(metric.memoryUsage ?? metric.memory_usage ?? 0),
+          diskUsage: Number(metric.diskUsage ?? metric.disk_usage ?? 0),
+          netInBytes: Number(metric.netInBytes ?? metric.bytes_received ?? 0),
+          netOutBytes: Number(metric.netOutBytes ?? metric.bytes_transmitted ?? 0),
+          netInSpeed: Number(metric.netInSpeed ?? metric.net_in_speed ?? 0),
+          netOutSpeed: Number(metric.netOutSpeed ?? metric.net_out_speed ?? 0),
+          load1: Number(metric.load1 ?? 0),
+          load5: Number(metric.load5 ?? 0),
+          load15: Number(metric.load15 ?? 0),
+          tcpConns: Number(metric.tcpConns ?? metric.tcp_conns ?? 0),
+          udpConns: Number(metric.udpConns ?? metric.udp_conns ?? 0),
+          uptime: incomingUptime || prev[nodeId]?.uptime || 0,
+        };
+
+        return {
+          ...prev,
+          [nodeId]: normalized,
+        };
+      });
       setRealtimeNodeStatus((prev) => ({
         ...prev,
         [nodeId]: "online",

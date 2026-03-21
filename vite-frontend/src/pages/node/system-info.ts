@@ -48,13 +48,49 @@ const parseRawSystemInfo = (messageData: unknown): RawSystemInfo | null => {
   return null;
 };
 
+/**
+ * Heuristic to verify the parsed object actually contains system-info fields.
+ * Prevents non-metric messages (command responses, etc.) from being mistakenly
+ * treated as system info, which would reset all values to 0 and cause UI flicker.
+ */
+const SYSTEM_INFO_KEYS = [
+  "uptime",
+  "cpu_usage",
+  "memory_usage",
+  "disk_usage",
+  "bytes_received",
+  "bytes_transmitted",
+  "net_in_speed",
+  "net_out_speed",
+  "tcp_conns",
+  "udp_conns",
+  "load1",
+  "load5",
+  "load15",
+] as const;
+
+const looksLikeSystemInfo = (raw: RawSystemInfo): boolean => {
+  let matched = 0;
+
+  for (const key of SYSTEM_INFO_KEYS) {
+    if (key in raw && raw[key] !== undefined) {
+      matched++;
+      if (matched >= 3) {
+        return true;
+      }
+    }
+  }
+
+  return false;
+};
+
 export const buildNodeSystemInfo = (
   messageData: unknown,
   previous: NodeSystemInfo | null | undefined,
 ): NodeSystemInfo | null => {
   const raw = parseRawSystemInfo(messageData);
 
-  if (!raw) {
+  if (!raw || !looksLikeSystemInfo(raw)) {
     return null;
   }
 

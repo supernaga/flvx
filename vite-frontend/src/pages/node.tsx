@@ -609,6 +609,8 @@ export default function NodePage() {
 
           if (!metric || typeof metric !== "object") return node;
 
+          const incomingUptime = metric.uptime ?? 0;
+
           return {
             ...node,
             connectionStatus: "online",
@@ -620,7 +622,7 @@ export default function NodePage() {
               downloadTraffic: metric.netInBytes ?? metric.bytes_received ?? 0,
               uploadSpeed: metric.netOutSpeed ?? metric.net_out_speed ?? 0,
               downloadSpeed: metric.netInSpeed ?? metric.net_in_speed ?? 0,
-              uptime: metric.uptime ?? 0,
+              uptime: incomingUptime || node.systemInfo?.uptime || 0,
               diskUsage: metric.diskUsage ?? metric.disk_usage,
               load1: metric.load1,
               load5: metric.load5,
