@@ -1947,7 +1947,7 @@ export default function NodePage() {
                     {(listeners) => (
                       <Card
                         key={node.id}
-                        className={`group relative overflow-visible shadow-sm border border-divider hover:shadow-md transition-shadow duration-200 h-full flex flex-col ${expiryMeta.accentClassName}`}
+                        className={`group relative overflow-visible shadow-sm border border-divider hover:shadow-md transition-shadow duration-200 h-full flex flex-col ${node.expiryReminderDismissed ? "" : expiryMeta.accentClassName}`}
                         data-node-card="true"
                       >
                         <CardHeader className="pb-3 md:pb-3">
