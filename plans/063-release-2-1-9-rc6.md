@@ -9,4 +9,4 @@ Sync all changes, bump version to `2.1.9-rc6`, create PR, merge, and publish tag
 - [x] Push branch to remote.
 - [x] Create Pull Request using `gh`.
 - [x] Merge Pull Request using `gh`.
-- [x] Create and push tag `v2.1.9-rc6`.
+- [x] Create and push tag `2.1.9-rc6`.
