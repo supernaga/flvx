@@ -1,6 +1,6 @@
 {
   "name": "@flvx/skill-api",
-  "version": "2.1.5",
+  "version": "2.1.9-rc4",
   "description": "Skill for AI assistants to operate FLVX panel via REST API. Supports OpenCode, OpenClaw, Claude Code.",
   "keywords": [
     "opencode",
