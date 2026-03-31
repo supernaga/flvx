@@ -1577,10 +1577,11 @@ func buildForwardServiceConfigs(baseName string, forward *forwardRecord, tunnel 
 		}
 		var serviceAddr string
 		if bindIP != "" {
-			if strings.Contains(bindIP, ":") {
-				serviceAddr = processServerAddress(bindIP)
+			trimmedBindIP := strings.TrimSpace(bindIP)
+			if _, _, err := net.SplitHostPort(trimmedBindIP); err == nil {
+				serviceAddr = processServerAddress(trimmedBindIP)
 			} else {
-				serviceAddr = processServerAddress(fmt.Sprintf("%s:%d", bindIP, port))
+				serviceAddr = processServerAddress(net.JoinHostPort(strings.Trim(trimmedBindIP, "[]"), strconv.Itoa(port)))
 			}
 		} else {
 			serviceAddr = processServerAddress(fmt.Sprintf("%s:%d", listenerAddr, port))
