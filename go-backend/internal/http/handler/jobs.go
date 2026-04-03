@@ -74,6 +74,13 @@ func (h *Handler) validateLicenseJob() {
 		// License is invalid (e.g., revoked, suspended, expired). Downgrade the system.
 		now := time.Now().UnixMilli()
 		_ = h.repo.UpsertConfig("is_commercial", "false", now)
+	} else {
+		now := time.Now().UnixMilli()
+		expiry := valResp.Data.Attributes.Expiry
+		if expiry == "" {
+			expiry = "never"
+		}
+		_ = h.repo.UpsertConfig("license_expiry", expiry, now)
 	}
 }
 

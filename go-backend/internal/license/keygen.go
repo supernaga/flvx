@@ -30,7 +30,10 @@ type ValidateResponse struct {
 		Code  string `json:"code"`
 	} `json:"meta"`
 	Data struct {
-		ID string `json:"id"`
+		ID         string `json:"id"`
+		Attributes struct {
+			Expiry string `json:"expiry"`
+		} `json:"attributes"`
 	} `json:"data"`
 }
 

@@ -981,7 +981,7 @@ export default function ConfigPage() {
               variant="bordered"
               onChange={(e) => setLicenseKeyInput(e.target.value)}
               isDisabled={configs.is_commercial === "true"}
-              description={configs.is_commercial === "true" ? "已激活商业版授权" : "需商业授权才能修改站名、图标并隐藏页脚品牌"}
+              description={configs.is_commercial === "true" ? (configs.license_expiry && configs.license_expiry !== "never" ? `已激活商业版授权 (有效期至: ${new Date(configs.license_expiry).toLocaleDateString()})` : "已激活商业版授权 (永久有效)") : "需商业授权才能修改站名、图标并隐藏页脚品牌"}
             />
             <Button
               color="primary"

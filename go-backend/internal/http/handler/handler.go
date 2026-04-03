@@ -871,6 +871,15 @@ func (h *Handler) licenseActivate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	expiry := valResp.Data.Attributes.Expiry
+	if expiry == "" {
+		expiry = "never"
+	}
+	if err := h.repo.UpsertConfig("license_expiry", expiry, now); err != nil {
+		response.WriteJSON(w, response.Err(-2, err.Error()))
+		return
+	}
+
 	response.WriteJSON(w, response.OKEmpty())
 }
 
