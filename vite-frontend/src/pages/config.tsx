@@ -487,6 +487,11 @@ export default function ConfigPage() {
 
   // 检查配置项是否应该显示（依赖检查）
   const shouldShowItem = (item: ConfigItem): boolean => {
+    // 隐藏商业版专属的设置项，它们会在专门的卡片中展示
+    if (["app_name", "app_logo", "app_favicon", "hide_footer_brand"].includes(item.key)) {
+      return false;
+    }
+
     if (!item.dependsOn || !item.dependsValue) {
       return true;
     }
@@ -968,7 +973,7 @@ export default function ConfigPage() {
         </CardHeader>
         <Divider />
         <CardBody className="pt-8">
-          <div className="flex items-end gap-3 max-w-lg">
+          <div className="flex items-end gap-3 max-w-lg mb-6">
             <Input
               label="授权激活码"
               placeholder="请输入 FLVX- 开头的商业授权码"
@@ -988,6 +993,33 @@ export default function ConfigPage() {
               {configs.is_commercial === "true" ? "已授权" : "激活授权"}
             </Button>
           </div>
+          
+          {configs.is_commercial === "true" && (
+            <div className="space-y-6">
+              <Divider className="my-2" />
+              <h3 className="text-md font-medium text-default-700">白标与品牌设置</h3>
+              {CONFIG_ITEMS.filter(item => ["app_name", "app_logo", "app_favicon", "hide_footer_brand"].includes(item.key)).map((item, index) => (
+                <div key={item.key}>
+                  <div className="grid grid-cols-1 gap-6 md:grid-cols-[1fr_2fr]">
+                    <div className="space-y-1">
+                      <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                        {item.label}
+                      </label>
+                      {item.description && (
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                          {item.description}
+                        </p>
+                      )}
+                    </div>
+                    <div className="flex items-start">
+                      {renderConfigItem(item)}
+                    </div>
+                  </div>
+                  {index < 3 && <Divider className="mt-6" />}
+                </div>
+              ))}
+            </div>
+          )}
         </CardBody>
       </Card>
 
