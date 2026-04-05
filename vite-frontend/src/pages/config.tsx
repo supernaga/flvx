@@ -621,10 +621,13 @@ export default function ConfigPage() {
 
   const renderBgImageUploader = () => {
     const bgImage = configs["app_bg_image"] || "";
+    const isImage = bgImage.startsWith("http") || bgImage.startsWith("data:") || bgImage.startsWith("/") || bgImage.startsWith("blob:");
+    const isTheme = bgImage === "theme";
+    const isSolidColor = bgImage && !isImage && !isTheme;
     
     return (
       <div className="flex flex-col gap-4 w-full">
-        <div className="flex items-center gap-4">
+        <div className="flex flex-wrap items-center gap-4">
           <input
             type="file"
             accept="image/*"
@@ -638,7 +641,23 @@ export default function ConfigPage() {
             onPress={() => bgImageFileInputRef.current?.click()}
             isLoading={bgImageUploading}
           >
-            选择图片
+            上传图片
+          </Button>
+          <Button
+            color="secondary"
+            variant="flat"
+            onPress={() => handleConfigChange("app_bg_image", "theme")}
+            isDisabled={bgImageUploading || isTheme}
+          >
+            自适应纯色 (跟随深色模式)
+          </Button>
+          <Button
+            color="default"
+            variant="flat"
+            onPress={() => handleConfigChange("app_bg_image", "#ffffff")}
+            isDisabled={bgImageUploading || bgImage === "#ffffff"}
+          >
+            白色纯色
           </Button>
           {bgImage && (
             <Button
@@ -647,11 +666,12 @@ export default function ConfigPage() {
               onPress={() => handleConfigChange("app_bg_image", "")}
               isDisabled={bgImageUploading}
             >
-              清除背景
+              恢复默认
             </Button>
           )}
         </div>
-        {bgImage && (
+        
+        {bgImage && isImage && (
           <div className="relative rounded-xl overflow-hidden border border-divider">
             <img
               src={bgImage}
@@ -661,6 +681,23 @@ export default function ConfigPage() {
             <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent flex items-end p-4">
               <span className="text-white text-sm font-medium">预览效果</span>
             </div>
+          </div>
+        )}
+
+        {bgImage && isTheme && (
+          <div className="relative rounded-xl border border-divider bg-background h-32 flex items-center justify-center">
+            <span className="text-foreground text-sm font-medium">当前为自适应纯色背景</span>
+          </div>
+        )}
+
+        {bgImage && isSolidColor && (
+          <div 
+            className="relative rounded-xl border border-divider h-32 flex items-center justify-center" 
+            style={{ backgroundColor: bgImage }}
+          >
+            <span className="text-gray-500 bg-white/80 dark:bg-black/80 px-2 py-1 rounded text-sm font-medium border border-gray-200 dark:border-gray-800 shadow-sm">
+              纯色背景 ({bgImage})
+            </span>
           </div>
         )}
       </div>

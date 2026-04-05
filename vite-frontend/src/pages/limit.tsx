@@ -327,7 +327,7 @@ export default function LimitPage() {
         <StaggerList className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
           {filteredRules.map((rule) => (
             <StaggerItem key={rule.id}>
-              <Card className="shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden h-full">
+              <Card className="shadow-sm overflow-hidden h-full">
                 <CardHeader className="pb-2 md:pb-2">
                   <div className="flex justify-between items-start w-full">
                     <div>
@@ -413,7 +413,7 @@ export default function LimitPage() {
         )
       ) : (
         /* 空状态 */
-        <Card className="shadow-sm border border-gray-200 dark:border-gray-700 bg-default-50/50">
+        <Card className="shadow-sm bg-default-50/50">
           <CardBody className="text-center py-20 flex flex-col items-center justify-center min-h-[240px]">
             <h3 className="text-xl font-medium text-foreground tracking-tight mb-2">
               暂无限速规则
