@@ -4192,7 +4192,7 @@ export default function ForwardPage() {
                         wrapper: "bg-transparent p-0 shadow-none border-none overflow-hidden rounded-[24px]",
                         th: "bg-default-100/50 text-default-600 font-semibold text-sm border-b border-divider py-3 uppercase tracking-wider first:rounded-tl-[24px] last:rounded-tr-[24px]",
                         td: "py-3 border-b border-divider/50 group-data-[last=true]:border-b-0",
-                        tr: "hover:bg-white/40 dark:hover:bg-white/10 transition-colors group",
+                        tr: "hover:bg-white/10 dark:hover:bg-white/5 transition-colors group",
                       }}
                     >
                       <TableHeader>
@@ -4327,7 +4327,7 @@ export default function ForwardPage() {
               return (
                 <div
                   key={`grouped-table-${group.userId}-${group.userName}`}
-                  className="overflow-hidden rounded-2xl border border-white/80 dark:border-white/10 bg-white/60 dark:bg-zinc-900/60 backdrop-blur-3xl shadow-[0_15px_35px_rgba(0,0,0,0.1)]"
+                  className="overflow-hidden rounded-2xl border border-white/80 dark:border-white/10 bg-white/20 dark:bg-zinc-900/20 backdrop-blur-3xl shadow-[0_15px_35px_rgba(0,0,0,0.1)]"
                 >
                   <div className="flex items-center justify-between border-b border-white/20 dark:border-white/10 bg-white/40 dark:bg-black/40 backdrop-blur-md px-5 py-4">
                     <div className="flex items-center gap-2">
@@ -4638,10 +4638,10 @@ export default function ForwardPage() {
                             collapsed={collapsed}
                             countClassName="text-xs text-default-600"
                             groupUserId={group.userId}
-                            headerClassName="flex items-center justify-between rounded-lg bg-white/40 dark:bg-black/40 backdrop-blur-md border border-white/20 dark:border-white/10 px-3 py-2"
+                            headerClassName="flex items-center justify-between rounded-lg bg-white/10 dark:bg-black/10 backdrop-blur-md border border-white/20 dark:border-white/10 px-3 py-2"
                             titleClassName="truncate text-sm font-semibold text-default-700"
                             tunnel={tunnel}
-                            wrapperClassName="rounded-xl border border-divider bg-white/20 dark:bg-black/20 space-y-3"
+                            wrapperClassName="rounded-xl border border-divider bg-white/5 dark:bg-black/5 space-y-3"
                             onToggleCollapsed={() =>
                               toggleTunnelGroupCollapsed(
                                 group.userId,

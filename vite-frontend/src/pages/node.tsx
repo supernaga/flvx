@@ -1770,7 +1770,7 @@ export default function NodePage() {
               wrapper: "bg-transparent p-0 shadow-none border-none overflow-hidden rounded-2xl",
               th: "bg-transparent text-default-600 font-semibold text-sm border-b border-white/20 dark:border-white/10 py-3 uppercase tracking-wider first:rounded-tl-[24px] last:rounded-tr-[24px]",
               td: "py-3 border-b border-divider/50 group-data-[last=true]:border-b-0",
-              tr: "hover:bg-white/40 dark:hover:bg-white/10 transition-colors",
+              tr: "hover:bg-white/10 dark:hover:bg-white/5 transition-colors",
             }}
           >
             <TableHeader>
@@ -2249,7 +2249,7 @@ export default function NodePage() {
                                         )}
                                       </span>
                                     </div>
-                                    <div className="max-h-20 overflow-y-auto rounded bg-white/70 dark:bg-black/20 p-1.5 [scrollbar-width:thin] [&::-webkit-scrollbar]:w-1">
+                                    <div className="max-h-20 overflow-y-auto rounded bg-white/10 dark:bg-black/10 p-1.5 [scrollbar-width:thin] [&::-webkit-scrollbar]:w-1">
                                       {remoteUsage.usedPorts.length > 0 ? (
                                         <div className="flex flex-wrap gap-1">
                                           {remoteUsage.usedPorts.map((port) => (
@@ -2285,7 +2285,7 @@ export default function NodePage() {
                                         remoteUsage.bindings.map((binding) => (
                                           <div
                                             key={binding.bindingId}
-                                            className="rounded border border-default-200 dark:border-default-100/30 bg-white/70 dark:bg-black/20 p-2"
+                                            className="rounded border border-default-200 dark:border-default-100/30 bg-white/10 dark:bg-black/10 p-2"
                                           >
                                             <div className="flex items-center justify-between gap-2">
                                               <span
