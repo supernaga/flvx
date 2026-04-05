@@ -65,7 +65,7 @@ interface ConfigItem {
   label: string;
   placeholder?: string;
   description?: string;
-  type: "input" | "switch" | "select";
+  type: "input" | "switch" | "select" | "bg_image";
   options?: { label: string; value: string; description?: string }[];
   dependsOn?: string; // 依赖的配置项key
   dependsValue?: string; // 依赖的配置项值
@@ -86,6 +86,12 @@ const toBrandAssetKind = (key: BrandPreviewKey): BrandAssetKind => {
 
 // 网站配置项定义
 const CONFIG_ITEMS: ConfigItem[] = [
+  {
+    key: "app_bg_image",
+    label: "自定义背景",
+    description: "上传自定义背景图片（建议使用深色/浅色均可看清的图片，或使用半透明模糊效果）",
+    type: "bg_image",
+  },
   {
     key: "ip",
     label: "面板后端地址",
@@ -254,6 +260,8 @@ export default function ConfigPage() {
 
   const logoFileInputRef = useRef<HTMLInputElement>(null);
   const faviconFileInputRef = useRef<HTMLInputElement>(null);
+  const bgImageFileInputRef = useRef<HTMLInputElement>(null);
+  const [bgImageUploading, setBgImageUploading] = useState(false);
 
   const [announcement, setAnnouncement] = useState<AnnouncementData>({
     content: "",
@@ -547,6 +555,118 @@ export default function ConfigPage() {
     }
   };
 
+  const handleBgImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      toast.error("只能上传图片文件");
+      return;
+    }
+
+    setBgImageUploading(true);
+    try {
+      const compressedImage = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          const img = new Image();
+          img.onload = () => {
+            const canvas = document.createElement("canvas");
+            let width = img.width;
+            let height = img.height;
+            const MAX_WIDTH = 1920;
+            const MAX_HEIGHT = 1080;
+
+            if (width > height) {
+              if (width > MAX_WIDTH) {
+                height = Math.round((height * MAX_WIDTH) / width);
+                width = MAX_WIDTH;
+              }
+            } else {
+              if (height > MAX_HEIGHT) {
+                width = Math.round((width * MAX_HEIGHT) / height);
+                height = MAX_HEIGHT;
+              }
+            }
+
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext("2d");
+            if (!ctx) {
+              reject(new Error("Canvas context is null"));
+              return;
+            }
+            ctx.drawImage(img, 0, 0, width, height);
+            
+            // Output as webp for better compression
+            const dataUrl = canvas.toDataURL("image/webp", 0.8);
+            resolve(dataUrl);
+          };
+          img.onerror = () => reject(new Error("图片加载失败"));
+          img.src = event.target?.result as string;
+        };
+        reader.onerror = () => reject(new Error("文件读取失败"));
+        reader.readAsDataURL(file);
+      });
+
+      handleConfigChange("app_bg_image", compressedImage);
+      toast.success("自定义背景上传成功");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "图片处理失败");
+    } finally {
+      setBgImageUploading(false);
+      e.target.value = "";
+    }
+  };
+
+  const renderBgImageUploader = () => {
+    const bgImage = configs["app_bg_image"] || "";
+    
+    return (
+      <div className="flex flex-col gap-4 w-full">
+        <div className="flex items-center gap-4">
+          <input
+            type="file"
+            accept="image/*"
+            ref={bgImageFileInputRef}
+            className="hidden"
+            onChange={handleBgImageUpload}
+          />
+          <Button
+            color="primary"
+            variant="flat"
+            onPress={() => bgImageFileInputRef.current?.click()}
+            isLoading={bgImageUploading}
+          >
+            选择图片
+          </Button>
+          {bgImage && (
+            <Button
+              color="danger"
+              variant="flat"
+              onPress={() => handleConfigChange("app_bg_image", "")}
+              isDisabled={bgImageUploading}
+            >
+              清除背景
+            </Button>
+          )}
+        </div>
+        {bgImage && (
+          <div className="relative rounded-xl overflow-hidden border border-divider">
+            <img
+              src={bgImage}
+              alt="背景预览"
+              className="w-full max-h-48 object-cover opacity-80"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent flex items-end p-4">
+              <span className="text-white text-sm font-medium">预览效果</span>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
   const renderBrandPreview = (key: BrandPreviewKey) => {
     const previewUrl = (configs[key] || "").trim();
     const appNamePreview = (configs.app_name || "").trim() || "应用名称";
@@ -699,6 +819,9 @@ export default function ConfigPage() {
     const isCommercialDisabled = ["app_name", "app_logo", "app_favicon", "hide_footer_brand"].includes(item.key) && configs.is_commercial !== "true";
 
     switch (item.type) {
+      case "bg_image":
+        return renderBgImageUploader();
+
       case "input":
         if (isBrandPreviewKey(item.key)) {
           return renderBrandAssetUploader(item.key, isChanged);

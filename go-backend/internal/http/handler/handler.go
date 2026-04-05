@@ -963,7 +963,7 @@ func (h *Handler) updateSingleConfig(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if value == "" && name != "app_logo" && name != "app_favicon" {
+	if value == "" && name != "app_logo" && name != "app_favicon" && name != "app_bg_image" {
 		response.WriteJSON(w, response.ErrDefault("配置值不能为空"))
 		return
 	}
