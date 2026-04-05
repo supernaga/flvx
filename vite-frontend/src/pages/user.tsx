@@ -1084,9 +1084,10 @@ export default function UserPage() {
             aria-label="用户列表"
             className="overflow-x-auto min-w-full"
             classNames={{
-              th: "bg-default-100/50 text-default-600 font-semibold text-sm border-b border-divider py-3 uppercase tracking-wider",
+              wrapper: "bg-transparent p-0 shadow-none border-none overflow-hidden rounded-2xl",
+              th: "bg-transparent text-default-600 font-semibold text-sm border-b border-white/20 dark:border-white/10 py-3 uppercase tracking-wider first:rounded-tl-[24px] last:rounded-tr-[24px]",
               td: "py-3 border-b border-divider/50 group-data-[last=true]:border-b-0",
-              tr: "hover:bg-default-50/50 transition-colors",
+              tr: "hover:bg-white/40 dark:hover:bg-white/10 transition-colors",
             }}
           >
             <TableHeader>
@@ -1108,14 +1109,11 @@ export default function UserPage() {
                 return (
                   <TableRow key={user.id}>
                     <TableCell>
-                      <div className="flex items-center gap-2">
-                        <div
-                          className={`shrink-0 w-2 h-2 rounded-full ${
-                            userStatus.color === "success"
-                              ? "bg-success"
-                              : "bg-danger"
-                          }`}
-                        />
+                      <div className="flex items-center gap-3">
+                        <div className="flex items-center justify-center shrink-0 w-10 h-10 rounded-full bg-primary text-white font-bold text-sm relative">
+                          {(user.name || user.user).slice(0, 2).toUpperCase()}
+                          <span className={`absolute bottom-0 right-0 w-3 h-3 border-2 border-white dark:border-zinc-900 rounded-full ${userStatus.color === "success" ? "bg-success" : "bg-danger"}`} />
+                        </div>
                         <div className="flex flex-col">
                           <span className="font-medium text-foreground text-sm">
                             {user.name || user.user}
@@ -1252,16 +1250,22 @@ export default function UserPage() {
 
             return (
               <StaggerItem key={user.id}>
-                <Card className="shadow-sm border border-divider hover:shadow-md transition-shadow duration-200 overflow-hidden h-full">
+                <Card className="overflow-hidden h-full">
                   <CardHeader className="pb-2 md:pb-2">
                     <div className="flex justify-between items-start w-full">
-                      <div className="flex-1 min-w-0">
-                        <h3 className="font-semibold text-foreground truncate text-sm">
-                          {user.name || user.user}
-                        </h3>
-                        <p className="text-xs text-default-500 truncate">
-                          @{user.user}
-                        </p>
+                      <div className="flex items-center gap-3 flex-1 min-w-0">
+                        <div className="flex items-center justify-center shrink-0 w-10 h-10 rounded-full bg-primary text-white font-bold text-sm relative">
+                          {(user.name || user.user).slice(0, 2).toUpperCase()}
+                          <span className={`absolute bottom-0 right-0 w-3 h-3 border-2 border-white dark:border-zinc-900 rounded-full ${userStatus.color === "success" ? "bg-success" : "bg-danger"}`} />
+                        </div>
+                        <div className="flex flex-col min-w-0">
+                          <h3 className="font-semibold text-foreground truncate text-sm">
+                            {user.name || user.user}
+                          </h3>
+                          <p className="text-xs text-default-500 truncate">
+                            @{user.user}
+                          </p>
+                        </div>
                       </div>
                       <div className="flex items-center gap-1.5 ml-2">
                         <Chip
@@ -1896,9 +1900,9 @@ export default function UserPage() {
                 <Table
                   aria-label="用户隧道权限列表"
                   classNames={{
-                    th: "bg-default-100/50 text-default-600 font-semibold text-sm border-b border-divider py-3 uppercase tracking-wider",
+                    th: "bg-transparent text-default-600 font-semibold text-sm border-b border-white/20 dark:border-white/10 py-3 uppercase tracking-wider first:rounded-tl-[24px] last:rounded-tr-[24px]",
                     td: "py-3 border-b border-divider/50 group-data-[last=true]:border-b-0",
-                    tr: "hover:bg-default-50/50 transition-colors",
+                    tr: "hover:bg-white/40 dark:hover:bg-white/10 transition-colors",
                   }}
                 >
                   <TableHeader>

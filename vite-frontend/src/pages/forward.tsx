@@ -3689,7 +3689,7 @@ export default function ForwardPage() {
     return (
       <Card
         key={forward.id}
-        className="group h-full flex flex-col shadow-sm border border-divider hover:shadow-md transition-shadow duration-200 overflow-hidden"
+        className="group h-full flex flex-col overflow-hidden"
       >
         <CardHeader className="pb-2 md:pb-2">
           <div className="flex justify-between items-start w-full">
@@ -3966,7 +3966,7 @@ export default function ForwardPage() {
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between mb-6 gap-3">
         <div className="flex-1 flex items-center gap-2">
           <Button
-            color={activeFilterCount > 0 ? "primary" : "default"}
+            className="bg-default/10 dark:bg-default/20 backdrop-blur-md text-default-700 dark:text-default-300 font-semibold hover:bg-default/20 dark:hover:bg-default/30"
             startContent={
               <svg
                 className="w-4 h-4"
@@ -3982,7 +3982,6 @@ export default function ForwardPage() {
                 />
               </svg>
             }
-            variant={activeFilterCount > 0 ? "flat" : "bordered"}
             onPress={() => setIsSearchModalOpen(true)}
           >
             高级筛选 {activeFilterCount > 0 ? `(${activeFilterCount})` : ""}
@@ -4177,7 +4176,7 @@ export default function ForwardPage() {
                   {sortedForwards.length} 条规则
                 </span>
               </div>
-              <div className="overflow-hidden rounded-xl border border-divider bg-content1 shadow-md">
+              <Card className="overflow-hidden rounded-2xl border border-white/80 dark:border-white/10 bg-white/40 dark:bg-zinc-900/40 backdrop-blur-2xl shadow-[0_15px_35px_rgba(0,0,0,0.1)]">
                 <DndContext
                   collisionDetection={pointerWithin}
                   sensors={sensors}
@@ -4190,9 +4189,10 @@ export default function ForwardPage() {
                     <Table
                       aria-label="全部规则列表"
                       classNames={{
-                        th: "bg-default-100/50 text-default-600 font-semibold text-sm border-b border-divider py-3 uppercase tracking-wider",
+                        wrapper: "bg-transparent p-0 shadow-none border-none overflow-hidden rounded-[24px]",
+                        th: "bg-default-100/50 text-default-600 font-semibold text-sm border-b border-divider py-3 uppercase tracking-wider first:rounded-tl-[24px] last:rounded-tr-[24px]",
                         td: "py-3 border-b border-divider/50 group-data-[last=true]:border-b-0",
-                        tr: "hover:bg-default-50/50 transition-colors",
+                        tr: "hover:bg-white/40 dark:hover:bg-white/10 transition-colors group",
                       }}
                     >
                       <TableHeader>
@@ -4253,10 +4253,10 @@ export default function ForwardPage() {
                     </Table>
                   </SortableContext>
                 </DndContext>
-              </div>
+              </Card>
             </>
           ) : (
-            <Card className="shadow-sm border border-gray-200 dark:border-gray-700 bg-default-50/50">
+            <Card>
               <CardBody className="text-center py-20 flex flex-col items-center justify-center min-h-[240px]">
                 <h3 className="text-xl font-medium text-foreground tracking-tight mb-2">
                   暂无规则配置
@@ -4302,7 +4302,7 @@ export default function ForwardPage() {
             </DndContext>
           </>
         ) : (
-          <Card className="shadow-sm border border-gray-200 dark:border-gray-700 bg-default-50/50">
+          <Card>
             <CardBody className="text-center py-20 flex flex-col items-center justify-center min-h-[240px]">
               <h3 className="text-xl font-medium text-foreground tracking-tight mb-2">
                 暂无规则配置
@@ -4327,9 +4327,9 @@ export default function ForwardPage() {
               return (
                 <div
                   key={`grouped-table-${group.userId}-${group.userName}`}
-                  className="overflow-hidden rounded-xl border border-divider bg-content1 shadow-md"
+                  className="overflow-hidden rounded-2xl border border-white/80 dark:border-white/10 bg-white/60 dark:bg-zinc-900/60 backdrop-blur-3xl shadow-[0_15px_35px_rgba(0,0,0,0.1)]"
                 >
-                  <div className="flex items-center justify-between border-b border-divider bg-default-100/40 px-4 py-3">
+                  <div className="flex items-center justify-between border-b border-white/20 dark:border-white/10 bg-white/40 dark:bg-black/40 backdrop-blur-md px-5 py-4">
                     <div className="flex items-center gap-2">
                       <span className="text-sm font-semibold text-foreground">
                         {group.userName}
@@ -4415,10 +4415,10 @@ export default function ForwardPage() {
                               collapsed={collapsed}
                               countClassName="text-xs text-default-600"
                               groupUserId={group.userId}
-                              headerClassName="flex items-center justify-between border-b border-divider bg-default-100/60 px-4 py-2.5"
+                              headerClassName="flex items-center justify-between border-b border-white/20 dark:border-white/10 bg-white/40 dark:bg-black/40 backdrop-blur-md px-4 py-2.5"
                               titleClassName="truncate text-sm font-semibold text-default-700"
                               tunnel={tunnel}
-                              wrapperClassName="overflow-hidden rounded-lg border border-divider bg-default-50/60"
+                              wrapperClassName="overflow-hidden rounded-2xl border border-white/80 dark:border-white/10 bg-white/40 dark:bg-zinc-900/40 backdrop-blur-2xl shadow-[0_15px_35px_rgba(0,0,0,0.1)]"
                               onToggleCollapsed={() =>
                                 toggleTunnelGroupCollapsed(
                                   group.userId,
@@ -4439,9 +4439,10 @@ export default function ForwardPage() {
                                     aria-label={`${group.userName}-${tunnel.tunnelName}规则列表`}
                                     className={`table-fixed ${FORWARD_GROUPED_TABLE_MIN_WIDTH_CLASS}`}
                                     classNames={{
-                                      th: "bg-default-100/50 text-default-600 font-semibold text-sm border-b border-divider py-3 uppercase tracking-wider",
+                                      wrapper: "bg-transparent p-0 shadow-none border-none overflow-hidden rounded-2xl",
+                                      th: "bg-transparent text-default-600 font-semibold text-sm border-b border-white/20 dark:border-white/10 py-3 uppercase tracking-wider first:rounded-tl-[24px] last:rounded-tr-[24px]",
                                       td: "py-3 border-b border-divider/50 group-data-[last=true]:border-b-0",
-                                      tr: "hover:bg-default-50/50 transition-colors",
+                                      tr: "hover:bg-white/40 dark:hover:bg-white/10 transition-colors",
                                     }}
                                   >
                                     <TableHeader>
@@ -4561,7 +4562,7 @@ export default function ForwardPage() {
             })}
           </div>
         ) : (
-          <Card className="shadow-sm border border-gray-200 dark:border-gray-700 bg-default-50/50">
+          <Card>
             <CardBody className="text-center py-20 flex flex-col items-center justify-center min-h-[240px]">
               <h3 className="text-xl font-medium text-foreground tracking-tight mb-2">
                 暂无规则配置
@@ -4637,10 +4638,10 @@ export default function ForwardPage() {
                             collapsed={collapsed}
                             countClassName="text-xs text-default-600"
                             groupUserId={group.userId}
-                            headerClassName="flex items-center justify-between rounded-lg bg-default-100/60 px-3 py-2"
+                            headerClassName="flex items-center justify-between rounded-lg bg-white/40 dark:bg-black/40 backdrop-blur-md border border-white/20 dark:border-white/10 px-3 py-2"
                             titleClassName="truncate text-sm font-semibold text-default-700"
                             tunnel={tunnel}
-                            wrapperClassName="rounded-xl border border-divider bg-default-50/60 space-y-3"
+                            wrapperClassName="rounded-xl border border-divider bg-white/20 dark:bg-black/20 space-y-3"
                             onToggleCollapsed={() =>
                               toggleTunnelGroupCollapsed(
                                 group.userId,
@@ -4682,7 +4683,7 @@ export default function ForwardPage() {
           })}
         </div>
       ) : (
-        <Card className="shadow-sm border border-gray-200 dark:border-gray-700 bg-default-50/50">
+        <Card>
           <CardBody className="text-center py-20 flex flex-col items-center justify-center min-h-[240px]">
             <h3 className="text-xl font-medium text-foreground tracking-tight mb-2">
               暂无规则配置
@@ -5415,7 +5416,7 @@ export default function ForwardPage() {
                   </div>
                 )}
               </ModalHeader>
-              <ModalBody className="bg-content1">
+              <ModalBody className="bg-transparent">
                 {diagnosisResult ? (
                   <div className="space-y-4">
                     {diagnosisLoading && (
@@ -5939,7 +5940,7 @@ export default function ForwardPage() {
                   </div>
                 )}
               </ModalBody>
-              <ModalFooter className="bg-content1 border-t border-divider">
+              <ModalFooter className="bg-transparent border-t border-white/20 dark:border-white/10">
                 <Button variant="light" onPress={onClose}>
                   关闭
                 </Button>
