@@ -1578,7 +1578,7 @@ export default function TunnelPage() {
       {/* 隧道卡片网格 */}
       {tunnels.length > 0 ? (
         viewMode === "list" ? (
-          <Card>
+          <Card className="bg-white/20 dark:bg-zinc-900/20 backdrop-blur-3xl border border-white/80 dark:border-white/10 shadow-[0_15px_35px_rgba(0,0,0,0.1)]">
           <Table
             aria-label="隧道列表"
             className="overflow-x-auto min-w-full"
@@ -1721,7 +1721,7 @@ export default function TunnelPage() {
                     {(listeners) => (
                       <Card
                         key={tunnel.id}
-                        className="group overflow-hidden"
+                        className="group overflow-hidden bg-white/20 dark:bg-zinc-900/20 backdrop-blur-3xl border border-white/80 dark:border-white/10 shadow-[0_15px_35px_rgba(0,0,0,0.1)]"
                       >
                         <CardHeader className="pb-2 md:pb-2">
                           <div className="flex justify-between items-start w-full">
@@ -1771,7 +1771,7 @@ export default function TunnelPage() {
                             <div className="pt-2 border-t border-divider">
                               <div className="flex items-center justify-center gap-2 text-xs">
                                 {/* 入口节点 */}
-                                <div className="flex items-center gap-1 px-2 py-1 bg-primary-50 dark:bg-primary-100/20 rounded border border-primary-200 dark:border-primary-300/20">
+                                <div className="flex items-center gap-1 px-2 py-1 bg-primary-50/30 dark:bg-primary-100/20 backdrop-blur-md rounded border border-primary-200/50 dark:border-primary-300/20">
                                   <svg
                                     aria-hidden="true"
                                     className="w-3 h-3 text-primary-600"
@@ -1806,7 +1806,7 @@ export default function TunnelPage() {
                                 </svg>
 
                                 {/* 转发链 */}
-                                <div className="flex items-center gap-1 px-2 py-1 bg-secondary-50 dark:bg-secondary-100/20 rounded border border-secondary-200 dark:border-secondary-300/20">
+                                <div className="flex items-center gap-1 px-2 py-1 bg-secondary-50/30 dark:bg-secondary-100/20 backdrop-blur-md rounded border border-secondary-200/50 dark:border-secondary-300/20">
                                   <svg
                                     aria-hidden="true"
                                     className="w-3 h-3 text-secondary-600"
@@ -1844,7 +1844,7 @@ export default function TunnelPage() {
                                 </svg>
 
                                 {/* 出口节点 */}
-                                <div className="flex items-center gap-1 px-2 py-1 bg-success-50 dark:bg-success-100/20 rounded border border-success-200 dark:border-success-300/20">
+                                <div className="flex items-center gap-1 px-2 py-1 bg-success-50/30 dark:bg-success-100/20 backdrop-blur-md rounded border border-success-200/50 dark:border-success-300/20">
                                   <svg
                                     aria-hidden="true"
                                     className="w-3 h-3 text-success-600"
@@ -1871,7 +1871,7 @@ export default function TunnelPage() {
                             <div
                               className={`grid gap-2 ${tunnel.type === 2 && tunnel.ipPreference ? "grid-cols-3" : "grid-cols-2"}`}
                             >
-                              <div className="text-center p-1.5 bg-default-50 dark:bg-default-100/30 rounded">
+                              <div className="text-center p-1.5 bg-white/5 dark:bg-black/5 backdrop-blur-3xl rounded-lg border border-divider">
                                 <div className="text-xs text-default-500">
                                   流量计算
                                 </div>
@@ -1879,7 +1879,7 @@ export default function TunnelPage() {
                                   {getTunnelFlowDisplay(tunnel.flow)}
                                 </div>
                               </div>
-                              <div className="text-center p-1.5 bg-default-50 dark:bg-default-100/30 rounded">
+                              <div className="text-center p-1.5 bg-white/5 dark:bg-black/5 backdrop-blur-3xl rounded-lg border border-divider">
                                 <div className="text-xs text-default-500">
                                   流量倍率
                                 </div>
@@ -1888,7 +1888,7 @@ export default function TunnelPage() {
                                 </div>
                               </div>
                               {tunnel.type === 2 && tunnel.ipPreference && (
-                                <div className="text-center p-1.5 bg-default-50 dark:bg-default-100/30 rounded">
+                                <div className="text-center p-1.5 bg-white/5 dark:bg-black/5 backdrop-blur-3xl rounded-lg border border-divider">
                                   <div className="text-xs text-default-500">
                                     连接偏好
                                   </div>
@@ -1986,7 +1986,7 @@ export default function TunnelPage() {
         )
       ) : (
         /* 空状态 */
-        <Card>
+        <Card className="bg-white/20 dark:bg-zinc-900/20 backdrop-blur-3xl border border-white/80 dark:border-white/10 shadow-[0_15px_35px_rgba(0,0,0,0.1)]">
           <CardBody className="text-center py-20 flex flex-col items-center justify-center min-h-[240px]">
             <h3 className="text-xl font-medium text-foreground tracking-tight mb-2">
               暂无隧道配置
