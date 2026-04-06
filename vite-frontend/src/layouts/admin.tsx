@@ -373,16 +373,15 @@ export default function AdminLayout({
       {/* 左侧菜单栏 */}
       <aside
         className={`
-        ${isMobile ? "fixed h-screen top-0 left-0 rounded-r-3xl" : "relative h-full rounded-3xl"} 
+        ${isMobile ? "fixed h-screen top-0 left-0 rounded-r-3xl" : "relative h-full rounded-3xl"}
         ${isMobile && !mobileMenuVisible ? "-translate-x-full" : "translate-x-0"}
-        ${isMobile ? "w-64" : isCollapsed ? "w-20" : "w-[260px]"} 
-        bg-white/60 dark:bg-zinc-900/60 backdrop-blur-3xl
-        shadow-[0_10px_30px_rgba(0,0,0,0.1)] 
+        ${isMobile ? "w-64" : isCollapsed ? "w-20" : "w-[260px]"}
+        bg-white/20 dark:bg-zinc-900/20 backdrop-blur-3xl
+        shadow-[0_10px_30px_rgba(0,0,0,0.1)]
         border border-white/80 dark:border-white/10
-        z-50 
+        z-50
         transition-all duration-300 ease-in-out
-        flex flex-col flex-shrink-0
-      `}
+        flex flex-col flex-shrink-0      `}
       >
         {/* Logo 区域 */}
         <div className="px-6 py-8 flex items-center overflow-hidden whitespace-nowrap box-border">
@@ -531,7 +530,7 @@ export default function AdminLayout({
         {isMobile && (
           <Button
             isIconOnly
-            className="absolute top-4 left-4 z-40 bg-white/60 dark:bg-zinc-900/60 backdrop-blur-md shadow-sm border border-white/80 dark:border-white/10"
+            className="absolute top-4 left-4 z-40 bg-white/20 dark:bg-zinc-900/20 backdrop-blur-md shadow-sm border border-white/80 dark:border-white/10"
             variant="flat"
             onPress={toggleMobileMenu}
           >

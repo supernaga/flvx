@@ -253,7 +253,7 @@ export default function MonitorPage() {
         </div>
 
         {/* Tab Switcher */}
-        <div className="flex items-center gap-1 p-1 rounded-2xl bg-white/40 dark:bg-black/40 backdrop-blur-lg border border-white/50 dark:border-white/10 w-fit shadow-sm">
+        <div className="flex items-center gap-1 p-1 rounded-2xl bg-white/20 dark:bg-black/20 backdrop-blur-3xl border border-white/50 dark:border-white/10 w-fit shadow-sm">
           <button
             className={`flex items-center gap-1.5 px-5 py-2 rounded-xl text-sm font-semibold transition-all duration-200 ${
               activeTab === "nodes"
