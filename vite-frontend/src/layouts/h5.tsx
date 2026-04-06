@@ -18,7 +18,7 @@ interface TabItem {
 export default function H5Layout({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
   const location = useLocation();
-  const [isAdmin, setIsAdmin] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(() => getAdminFlag());
   const [monitorAllowed, setMonitorAllowed] = useState<boolean | null>(null);
   const [monitorAccessReason, setMonitorAccessReason] = useState<string | null>(
     null,

@@ -89,7 +89,7 @@ export default function PanelSharingPage() {
     [],
   );
   const [nodes, setNodes] = useState<Node[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [remoteUsageLoading, setRemoteUsageLoading] = useState(false);
 
   // Modals

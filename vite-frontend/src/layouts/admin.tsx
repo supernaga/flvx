@@ -47,7 +47,7 @@ export default function AdminLayout({
   const [isCollapsed, setIsCollapsed] = useState(
     () => localStorage.getItem("sidebar_collapsed") === "true",
   );
-  const [isAdmin, setIsAdmin] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(() => getAdminFlag());
   const [monitorAllowed, setMonitorAllowed] = useState<boolean | null>(null);
   const [monitorAccessReason, setMonitorAccessReason] = useState<string | null>(
     null,
@@ -433,7 +433,7 @@ export default function AdminLayout({
                   >
                     {isActive && (
                       <motion.div
-                        className="absolute inset-0 rounded-2xl bg-white/80 dark:bg-white/10 shadow-[0_2px_8px_rgba(0,0,0,0.04)] border border-white/50 dark:border-white/5"
+                        className="absolute inset-0 rounded-2xl bg-white/60 dark:bg-white/10 backdrop-blur-xl shadow-[0_12px_36px_rgba(0,0,0,0.18)] border border-white dark:border-white/20"
                         layoutId="sidebar-active"
                         transition={{
                           type: "spring",

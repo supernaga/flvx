@@ -185,7 +185,7 @@ const normalizeUserTunnelItem = (item: Partial<UserTunnel>): UserTunnel => {
 export default function UserPage() {
   // 状态管理
   const [users, setUsers] = useState<User[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [searchKeyword, setSearchKeyword] = useLocalStorageState(
     "user-search-keyword",
     "",
@@ -465,10 +465,6 @@ export default function UserPage() {
     void loadUserGroups();
     void loadMonitorPermissions();
   }, [loadMonitorPermissions, loadSpeedLimits, loadTunnels, loadUserGroups]);
-
-  useEffect(() => {
-    void loadUsers();
-  }, [loadUsers]);
 
   useEffect(() => {
     if (searchDebounceRef.current) {
