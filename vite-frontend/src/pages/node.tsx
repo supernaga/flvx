@@ -288,7 +288,7 @@ const SortableItem = ({
 export default function NodePage() {
   const [nodeList, setNodeList] = useState<Node[]>([]);
   const [nodeOrder, setNodeOrder] = useState<number[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [localSearchKeyword, setLocalSearchKeyword] = useLocalStorageState(
     "node-search-keyword-local",
     "",

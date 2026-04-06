@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 
+import { AnimatedPage } from "@/components/animated-page";
+import { PageLoadingState } from "@/components/page-state";
 import { Card, CardBody, CardHeader } from "@/shadcn-bridge/heroui/card";
 import { Button } from "@/shadcn-bridge/heroui/button";
 import { Input } from "@/shadcn-bridge/heroui/input";
@@ -22,7 +24,7 @@ import {
   TableRow,
 } from "@/shadcn-bridge/heroui/table";
 import { Chip } from "@/shadcn-bridge/heroui/chip";
-import { Spinner } from "@/shadcn-bridge/heroui/spinner";
+
 import {
   assignGroupPermission,
   assignTunnelsToGroup,
@@ -469,14 +471,12 @@ export default function GroupPage() {
   }
 
   return (
-    <div className="px-3 lg:px-6 py-8 space-y-6">
-      {loading && (
-        <div className="flex justify-center py-10">
-          <Spinner size="lg" />
-        </div>
-      )}
-
-      <Card>
+    <AnimatedPage className="px-3 lg:px-6 py-8 space-y-6">
+      {loading ? (
+        <PageLoadingState message="正在加载..." />
+      ) : (
+        <>
+          <Card>
         <CardHeader className="flex flex-row items-center gap-3 pb-2">
           <h3 className="text-lg font-semibold">隧道分组</h3>
           <Button
@@ -922,6 +922,8 @@ export default function GroupPage() {
           </ModalFooter>
         </ModalContent>
       </Modal>
-    </div>
+        </>
+      )}
+    </AnimatedPage>
   );
 }

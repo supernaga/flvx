@@ -241,16 +241,16 @@ body {
   bottom: 0;
   z-index: -1;
   pointer-events: none;
-  background: url('https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=2564&auto=format&fit=crop') no-repeat center center;
+  background: url('/images/bg-light.jpg') no-repeat center center;
   background-size: cover;
 }
 
-:root.dark .bg-mesh-gradient {
+.dark .bg-mesh-gradient {
   background-color: #0b1020;
 }
 
 .dark .bg-mesh-gradient::before {
-  background: url('https://images.unsplash.com/photo-1557682250-33bd709cbe85?q=80&w=2564&auto=format&fit=crop') no-repeat center center;
+  background: url('/images/bg-dark.jpg') no-repeat center center;
   background-size: cover;
 }
 
