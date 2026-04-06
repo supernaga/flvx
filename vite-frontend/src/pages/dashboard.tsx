@@ -1067,7 +1067,7 @@ export default function DashboardPage() {
                     {group.forwards.map((forward) => (
                       <div
                         key={forward.id}
-                        className="bg-white dark:bg-default-100/50 border border-gray-200 dark:border-default-200 rounded-lg p-3 hover:shadow-md transition-shadow"
+                        className="bg-white/10 dark:bg-black/10 backdrop-blur-md border border-white/20 dark:border-white/10 rounded-lg p-3 shadow-sm hover:shadow-md transition-all duration-300"
                       >
                         <div className="space-y-3">
                           <div>
@@ -1076,7 +1076,7 @@ export default function DashboardPage() {
                             </h4>
                             <div className="space-y-1">
                               <button
-                                className={`block px-2 py-1 bg-default-50/50 dark:bg-default-100/20 backdrop-blur-md rounded-lg border border-default-200/50 dark:border-default-700/50 font-mono text-xs truncate text-foreground transition-colors duration-200 ${hasMultipleIps(forward.inIp) ? "cursor-pointer hover:bg-default-100 dark:hover:bg-default-200/50" : ""}`}
+                                className={`block px-2 py-1 bg-white/20 dark:bg-black/20 backdrop-blur-md rounded-lg border border-white/20 dark:border-white/10 font-mono text-xs truncate text-foreground transition-all duration-300 ${hasMultipleIps(forward.inIp) ? "cursor-pointer hover:bg-white/30 dark:hover:bg-white/10" : ""}`}
                                 disabled={!hasMultipleIps(forward.inIp)}
                                 title={formatInAddress(
                                   forward.inIp,
@@ -1097,7 +1097,7 @@ export default function DashboardPage() {
                                 ↓
                               </div>
                               <button
-                                className={`block px-2 py-1 bg-default-50/50 dark:bg-default-100/20 backdrop-blur-md rounded-lg border border-default-200/50 dark:border-default-700/50 font-mono text-xs truncate text-foreground transition-colors duration-200 ${hasMultipleRemoteAddresses(forward.remoteAddr) ? "cursor-pointer hover:bg-default-100 dark:hover:bg-default-200/50" : ""}`}
+                                className={`block px-2 py-1 bg-white/20 dark:bg-black/20 backdrop-blur-md rounded-lg border border-white/20 dark:border-white/10 font-mono text-xs truncate text-foreground transition-all duration-300 ${hasMultipleRemoteAddresses(forward.remoteAddr) ? "cursor-pointer hover:bg-white/30 dark:hover:bg-white/10" : ""}`}
                                 disabled={
                                   !hasMultipleRemoteAddresses(
                                     forward.remoteAddr,
