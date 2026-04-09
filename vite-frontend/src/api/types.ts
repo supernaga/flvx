@@ -11,6 +11,55 @@ export interface NodeApiItem {
   [key: string]: unknown;
 }
 
+export type RuntimeEngine = "gost" | "dash";
+
+export type RuntimeSwitchStatus = "idle" | "switching" | "failed";
+
+export type RuntimeProgressState =
+  | "pending"
+  | "running"
+  | "succeeded"
+  | "failed"
+  | "switching";
+
+export interface RuntimeNodeSummaryApiData {
+  total: number;
+  ready: number;
+  pending: number;
+  failed: number;
+}
+
+export interface RuntimeProgressApiData {
+  engine: RuntimeEngine;
+  state: RuntimeProgressState;
+  phase?: string;
+  message?: string;
+}
+
+export interface RuntimeNodeProgressApiItem {
+  nodeId: number;
+  nodeName: string;
+  engine: RuntimeEngine;
+  ready: boolean;
+  progress: RuntimeProgressState;
+  message?: string;
+}
+
+export interface RuntimeEngineSettingsApiData {
+  currentEngine: RuntimeEngine;
+  switchStatus: RuntimeSwitchStatus;
+  generation: number;
+  lastError: string;
+  nodeSummary: RuntimeNodeSummaryApiData;
+  runtimeProgress: RuntimeProgressApiData;
+  rebuildProgress: RuntimeProgressApiData;
+  nodes: RuntimeNodeProgressApiItem[];
+}
+
+export interface RuntimeEngineUpdatePayload {
+  engine: RuntimeEngine;
+}
+
 export interface UserApiItem {
   id: number;
   user: string;
