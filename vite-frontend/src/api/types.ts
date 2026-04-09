@@ -24,6 +24,7 @@ export type RuntimeProgressState =
 
 export interface RuntimeNodeSummaryApiData {
   total: number;
+  completed: number;
   ready: number;
   pending: number;
   failed: number;
@@ -53,6 +54,7 @@ export interface RuntimeEngineSettingsApiData {
   nodeSummary: RuntimeNodeSummaryApiData;
   runtimeProgress: RuntimeProgressApiData;
   rebuildProgress: RuntimeProgressApiData;
+  warnings: string[];
   nodes: RuntimeNodeProgressApiItem[];
 }
 

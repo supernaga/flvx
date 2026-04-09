@@ -274,6 +274,9 @@ export const RuntimeEngineCard = () => {
                   <Chip color="success" size="sm" variant="flat">
                     就绪 {settings.nodeSummary.ready}
                   </Chip>
+                  <Chip color="success" size="sm" variant="bordered">
+                    已完成 {settings.nodeSummary.completed}
+                  </Chip>
                   <Chip color="warning" size="sm" variant="flat">
                     待处理 {settings.nodeSummary.pending}
                   </Chip>
@@ -298,8 +301,16 @@ export const RuntimeEngineCard = () => {
             {settings.rebuildProgress?.message ? (
               <Alert
                 color={getProgressMeta(settings.rebuildProgress.state).color === "danger" ? "danger" : "default"}
-                description={settings.rebuildProgress.message}
+                description={`${settings.rebuildProgress.message}${settings.rebuildProgress.phase ? `（阶段：${getPhaseLabel(settings.rebuildProgress.phase)}）` : ""}`}
                 title={`运行时重建：${getProgressMeta(settings.rebuildProgress.state).label}`}
+              />
+            ) : null}
+
+            {settings.warnings?.length ? (
+              <Alert
+                color="warning"
+                description={settings.warnings.join("；")}
+                title={`运行时警告（${settings.warnings.length}）`}
               />
             ) : null}
 
