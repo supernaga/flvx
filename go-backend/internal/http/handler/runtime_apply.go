@@ -5,6 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"log"
+
+	backendruntime "go-backend/internal/runtime"
 )
 
 type dashForwardRuntimeApplier interface {
@@ -15,25 +17,38 @@ type dashTunnelRuntimeApplier interface {
 	ApplyTunnel(ctx context.Context, tunnelID int64) error
 }
 
+type dashForwardRuntimeDetailApplier interface {
+	ApplyForwardsDetailed(ctx context.Context, tunnelID int64) ([]backendruntime.ForwardApplyResult, error)
+}
+
 type dashRuleDeleter interface {
 	DeleteRule(ctx context.Context, nodeID int64, ruleID string) error
 }
 
 func (h *Handler) applyForwardRuntimeForCurrentEngine(ctx context.Context, tunnelID int64, fallback func() error) error {
+	_, err := h.applyForwardRuntimeForCurrentEngineWithMetadata(ctx, 0, tunnelID, fallback)
+	return err
+}
+
+func (h *Handler) applyForwardRuntimeForCurrentEngineWithMetadata(ctx context.Context, forwardID, tunnelID int64, fallback func() error) (*forwardRuntimeMetadata, error) {
 	if h == nil {
-		return errors.New("handler not initialized")
+		return nil, errors.New("handler not initialized")
 	}
 	client, err := h.currentRuntimeClient()
 	if err != nil {
-		return err
+		return nil, err
+	}
+	if applier, ok := client.(dashForwardRuntimeDetailApplier); ok {
+		results, err := applier.ApplyForwardsDetailed(ctx, tunnelID)
+		return buildForwardRuntimeMetadata(backendruntime.EngineDash, filterForwardApplyResults(results, forwardID), nil), err
 	}
 	if applier, ok := client.(dashForwardRuntimeApplier); ok {
-		return applier.ApplyForwards(ctx, tunnelID)
+		return nil, applier.ApplyForwards(ctx, tunnelID)
 	}
 	if fallback == nil {
-		return nil
+		return nil, nil
 	}
-	return fallback()
+	return nil, fallback()
 }
 
 func (h *Handler) applyTunnelRuntimeForCurrentEngine(ctx context.Context, state *tunnelCreateState, fallback func() ([]int64, []int64, error)) ([]int64, []int64, error) {
@@ -60,22 +75,40 @@ func (h *Handler) applyTunnelRuntimeForCurrentEngine(ctx context.Context, state 
 }
 
 func (h *Handler) reconcileForwardRuntimeForCurrentEngine(ctx context.Context, forwardID, tunnelID int64, oldPorts, newPorts []forwardPortRecord, fallback func() error) error {
+	_, err := h.reconcileForwardRuntimeForCurrentEngineWithMetadata(ctx, forwardID, tunnelID, oldPorts, newPorts, fallback)
+	return err
+}
+
+func (h *Handler) reconcileForwardRuntimeForCurrentEngineWithMetadata(ctx context.Context, forwardID, tunnelID int64, oldPorts, newPorts []forwardPortRecord, fallback func() error) (*forwardRuntimeMetadata, error) {
 	if h == nil {
-		return errors.New("handler not initialized")
+		return nil, errors.New("handler not initialized")
 	}
 	client, err := h.currentRuntimeClient()
 	if err != nil {
-		return err
+		return nil, err
+	}
+	if applier, ok := client.(dashForwardRuntimeDetailApplier); ok {
+		results, err := applier.ApplyForwardsDetailed(ctx, tunnelID)
+		if err == nil {
+			if deleter, ok := client.(dashRuleDeleter); ok {
+				for _, stale := range staleForwardDashRules(forwardID, oldPorts, newPorts) {
+					if delErr := deleter.DeleteRule(ctx, stale.nodeID, stale.ruleID); delErr != nil {
+						log.Printf("runtime_apply warning: failed to delete stale dash forward rule node=%d rule=%s: %v", stale.nodeID, stale.ruleID, delErr)
+					}
+				}
+			}
+		}
+		return buildForwardRuntimeMetadata(backendruntime.EngineDash, filterForwardApplyResults(results, forwardID), nil), err
 	}
 	applier, ok := client.(dashForwardRuntimeApplier)
 	if !ok {
 		if fallback == nil {
-			return nil
+			return nil, nil
 		}
-		return fallback()
+		return nil, fallback()
 	}
 	if err := applier.ApplyForwards(ctx, tunnelID); err != nil {
-		return err
+		return nil, err
 	}
 	if deleter, ok := client.(dashRuleDeleter); ok {
 		for _, stale := range staleForwardDashRules(forwardID, oldPorts, newPorts) {
@@ -84,7 +117,73 @@ func (h *Handler) reconcileForwardRuntimeForCurrentEngine(ctx context.Context, f
 			}
 		}
 	}
-	return nil
+	return nil, nil
+}
+
+type forwardRuntimeMetadata struct {
+	Engine   string                `json:"engine"`
+	Overall  string                `json:"overall"`
+	Children []forwardRuntimeChild `json:"children"`
+	Warnings []string              `json:"warnings"`
+}
+
+type forwardRuntimeChild struct {
+	NodeID   int64  `json:"nodeId"`
+	Port     int    `json:"port"`
+	Protocol string `json:"protocol"`
+	RuleID   string `json:"ruleId"`
+	Status   string `json:"status"`
+	Message  string `json:"message,omitempty"`
+}
+
+func buildForwardRuntimeMetadata(engine backendruntime.Engine, results []backendruntime.ForwardApplyResult, extraWarnings []string) *forwardRuntimeMetadata {
+	if len(results) == 0 && len(extraWarnings) == 0 {
+		return nil
+	}
+	metadata := &forwardRuntimeMetadata{
+		Engine:   string(engine),
+		Overall:  string(backendruntime.ForwardApplyStatusSuccess),
+		Children: make([]forwardRuntimeChild, 0),
+		Warnings: append([]string{}, extraWarnings...),
+	}
+	for _, result := range results {
+		metadata.Overall = combineForwardRuntimeOverall(metadata.Overall, string(result.Status))
+		metadata.Warnings = append(metadata.Warnings, result.Warnings...)
+		for _, protocol := range result.Protocols {
+			metadata.Children = append(metadata.Children, forwardRuntimeChild{
+				NodeID:   result.NodeID,
+				Port:     result.Port,
+				Protocol: protocol.Protocol,
+				RuleID:   protocol.RuleID,
+				Status:   string(protocol.Status),
+				Message:  protocol.Message,
+			})
+		}
+	}
+	return metadata
+}
+
+func filterForwardApplyResults(results []backendruntime.ForwardApplyResult, forwardID int64) []backendruntime.ForwardApplyResult {
+	if forwardID <= 0 {
+		return results
+	}
+	filtered := make([]backendruntime.ForwardApplyResult, 0, len(results))
+	for _, result := range results {
+		if result.ForwardID == forwardID {
+			filtered = append(filtered, result)
+		}
+	}
+	return filtered
+}
+
+func combineForwardRuntimeOverall(current, next string) string {
+	if current == string(backendruntime.ForwardApplyStatusFailed) || next == string(backendruntime.ForwardApplyStatusFailed) {
+		return string(backendruntime.ForwardApplyStatusFailed)
+	}
+	if current == string(backendruntime.ForwardApplyStatusPartialSuccess) || next == string(backendruntime.ForwardApplyStatusPartialSuccess) {
+		return string(backendruntime.ForwardApplyStatusPartialSuccess)
+	}
+	return string(backendruntime.ForwardApplyStatusSuccess)
 }
 
 func (h *Handler) reconcileTunnelRuntimeForCurrentEngine(ctx context.Context, oldChainRows []chainNodeRecord, state *tunnelCreateState, fallback func() ([]int64, []int64, error)) ([]int64, []int64, error) {
@@ -127,6 +226,7 @@ func staleForwardDashRules(forwardID int64, oldPorts, newPorts []forwardPortReco
 	if forwardID <= 0 || len(oldPorts) == 0 {
 		return nil
 	}
+	protocols := []string{"tcp", "udp"}
 	active := make(map[string]struct{}, len(newPorts))
 	for _, port := range newPorts {
 		if port.NodeID <= 0 || port.Port <= 0 {
@@ -144,12 +244,14 @@ func staleForwardDashRules(forwardID int64, oldPorts, newPorts []forwardPortReco
 		if _, ok := active[key]; ok {
 			continue
 		}
-		ruleID := fmt.Sprintf("forward-%d-node-%d-port-%d", forwardID, port.NodeID, port.Port)
-		if _, ok := seen[ruleID]; ok {
-			continue
+		for _, protocol := range protocols {
+			ruleID := fmt.Sprintf("forward-%d-node-%d-port-%d-%s", forwardID, port.NodeID, port.Port, protocol)
+			if _, ok := seen[ruleID]; ok {
+				continue
+			}
+			seen[ruleID] = struct{}{}
+			stale = append(stale, dashRuleTarget{nodeID: port.NodeID, ruleID: ruleID})
 		}
-		seen[ruleID] = struct{}{}
-		stale = append(stale, dashRuleTarget{nodeID: port.NodeID, ruleID: ruleID})
 	}
 	return stale
 }

@@ -20,33 +20,92 @@ func BuildForwardRules(
 	if err != nil {
 		return nil, err
 	}
-	targets := splitTargets(forward.RemoteAddr)
-	rules := make([]RelayRulePayload, 0, len(ports))
+	rules := make([]RelayRulePayload, 0, len(ports)*2)
 	for _, port := range ports {
 		entryNode, ok := entryNodes[port.NodeID]
 		if !ok {
 			return nil, fmt.Errorf("entry node %d not found", port.NodeID)
 		}
-		listenHost := strings.Trim(entryNode.TCPListenAddr, "[]")
-		if listenHost == "" {
-			listenHost = "0.0.0.0"
+		expandedRules, err := BuildForwardRulesForPort(forward, port, entryNode, stagePools, traffic)
+		if err != nil {
+			return nil, err
 		}
-		description := forward.Name
-		rules = append(rules, RelayRulePayload{
-			ID:          fmt.Sprintf("forward-%d-node-%d-port-%d", forward.ID, port.NodeID, port.Port),
-			Protocol:    "tcp",
-			Listen:      fmt.Sprintf("%s:%d", listenHost, port.Port),
-			Enabled:     true,
-			Description: &description,
-			StagePools:  stagePools,
-			TargetPool: TargetPoolPayload{
-				Policy:   normalizeStrategy(forward.Strategy),
-				Backends: buildTargetBackends(targets),
-			},
-			Traffic: traffic,
-		})
+		rules = append(rules, expandedRules...)
 	}
 	return rules, nil
+}
+
+func BuildForwardRulesForPort(
+	forward model.ForwardRecord,
+	port model.ForwardPortRecord,
+	entryNode model.NodeRecord,
+	stagePools []StagePoolPayload,
+	traffic *TrafficPayload,
+) ([]RelayRulePayload, error) {
+	protocols := []string{"tcp", "udp"}
+	rules := make([]RelayRulePayload, 0, len(protocols))
+	for _, protocol := range protocols {
+		rule, err := buildForwardRule(forward, port, entryNode, protocol, stagePools, traffic)
+		if err != nil {
+			return nil, err
+		}
+		rules = append(rules, rule)
+	}
+	return rules, nil
+}
+
+func BuildForwardTcpRule(
+	forward model.ForwardRecord,
+	port model.ForwardPortRecord,
+	entryNode model.NodeRecord,
+	stagePools []StagePoolPayload,
+	traffic *TrafficPayload,
+) (RelayRulePayload, error) {
+	return buildForwardRulePayload(forward, port, entryNode, fmt.Sprintf("forward-%d-node-%d-port-%d-tcp", forward.ID, port.NodeID, port.Port), "tcp", stagePools, traffic)
+}
+
+func buildForwardRule(
+	forward model.ForwardRecord,
+	port model.ForwardPortRecord,
+	entryNode model.NodeRecord,
+	protocol string,
+	stagePools []StagePoolPayload,
+	traffic *TrafficPayload,
+) (RelayRulePayload, error) {
+	return buildForwardRulePayload(forward, port, entryNode, fmt.Sprintf("forward-%d-node-%d-port-%d-%s", forward.ID, port.NodeID, port.Port, protocol), protocol, stagePools, traffic)
+}
+
+func buildForwardRulePayload(
+	forward model.ForwardRecord,
+	port model.ForwardPortRecord,
+	entryNode model.NodeRecord,
+	ruleID string,
+	protocol string,
+	stagePools []StagePoolPayload,
+	traffic *TrafficPayload,
+) (RelayRulePayload, error) {
+	listenAddr := entryNode.TCPListenAddr
+	if protocol == "udp" {
+		listenAddr = entryNode.UDPListenAddr
+	}
+	listenHost := strings.Trim(listenAddr, "[]")
+	if listenHost == "" {
+		listenHost = "0.0.0.0"
+	}
+	description := forward.Name
+	return RelayRulePayload{
+		ID:          ruleID,
+		Protocol:    protocol,
+		Listen:      fmt.Sprintf("%s:%d", listenHost, port.Port),
+		Enabled:     true,
+		Description: &description,
+		StagePools:  stagePools,
+		TargetPool: TargetPoolPayload{
+			Policy:   normalizeStrategy(forward.Strategy),
+			Backends: buildTargetBackends(splitTargets(forward.RemoteAddr)),
+		},
+		Traffic: traffic,
+	}, nil
 }
 
 func BuildTunnelRule(
@@ -148,4 +207,26 @@ func normalizeStrategy(strategy string) string {
 	default:
 		return "round_robin"
 	}
+}
+
+func buildActiveExitStagePool(strategy string, nodeID int64, server, token string) (StagePoolPayload, error) {
+	server = strings.TrimSpace(server)
+	token = strings.TrimSpace(token)
+	if server == "" || token == "" {
+		return StagePoolPayload{}, fmt.Errorf("active exit not resolved for node %d", nodeID)
+	}
+	return StagePoolPayload{
+		Policy: normalizeStrategy(strategy),
+		Backends: []StageBackendPayload{{
+			ID:      fmt.Sprintf("active-exit-node-%d", nodeID),
+			Server:  server,
+			Token:   token,
+			Enabled: true,
+			Weight:  1,
+		}},
+	}, nil
+}
+
+func BuildActiveExitStagePool(strategy string, nodeID int64, server, token string) (StagePoolPayload, error) {
+	return buildActiveExitStagePool(strategy, nodeID, server, token)
 }

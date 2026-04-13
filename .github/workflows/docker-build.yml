@@ -3,6 +3,9 @@ name: Build and Push Images
 env:
   VERSION: "2.0.7-beta"  # 分支推送时使用的默认版本
   REGISTRY: ghcr.io
+  DASH_REPO: ${{ vars.DASH_REPO || 'Sagit-chu/Dash' }}
+  DASH_REF: ${{ vars.DASH_REF || 'main' }}
+  DASH_REPO_TOKEN: ${{ secrets.DASH_REPO_TOKEN }}
 
 on:
   push:
@@ -431,4 +434,3 @@ jobs:
           gh release upload "${VERSION}" ./artifacts/gost-arm64.sha256 --clobber
 
           echo "✅ GOST 二进制文件更新完成"
-

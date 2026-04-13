@@ -353,6 +353,7 @@ func (h *Handler) overlayCurrentRuntimeNodeStatuses(ctx context.Context, items [
 		}
 		status, err := provider.GetNodeRuntimeStatus(ctx, node)
 		if err != nil {
+			_ = h.repo.UpdateNodeStatus(nodeID, 0)
 			item["status"] = 0
 			item["syncError"] = err.Error()
 			item["runtimeEngine"] = string(engine)
@@ -364,11 +365,13 @@ func (h *Handler) overlayCurrentRuntimeNodeStatuses(ctx context.Context, items [
 		item["runtimeProgress"] = string(status.Progress)
 		item["runtimeReady"] = status.Ready
 		if status.Ready {
+			_ = h.repo.UpdateNodeStatus(nodeID, 1)
 			item["status"] = 1
 			if _, ok := item["syncError"]; ok {
 				delete(item, "syncError")
 			}
 		} else {
+			_ = h.repo.UpdateNodeStatus(nodeID, 0)
 			item["status"] = 0
 			if strings.TrimSpace(status.Message) != "" {
 				item["syncError"] = status.Message

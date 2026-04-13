@@ -425,6 +425,52 @@ func TestNodeCheckStatusUsesCurrentRuntimeProvider(t *testing.T) {
 	}
 }
 
+func TestNodeCheckStatusPersistsReadyStatusForDashEngine(t *testing.T) {
+	r, err := repo.Open(filepath.Join(t.TempDir(), "panel.db"))
+	if err != nil {
+		t.Fatalf("open repo: %v", err)
+	}
+	defer r.Close()
+
+	if err := r.DB().Create(&model.Node{
+		Name:          "node-a",
+		Secret:        "secret-a",
+		ServerIP:      "10.0.0.1",
+		Port:          "2024",
+		CreatedTime:   1,
+		Status:        0,
+		TCPListenAddr: "[::]",
+		UDPListenAddr: "[::]",
+	}).Error; err != nil {
+		t.Fatalf("insert node: %v", err)
+	}
+	if err := r.SetRuntimeEngine(repo.RuntimeEngineDash, 10); err != nil {
+		t.Fatalf("set runtime engine: %v", err)
+	}
+
+	h := New(r, "secret")
+	h.runtimeStatusProviders = map[backendruntime.Engine]runtimeStatusProvider{
+		backendruntime.EngineDash: runtimeStatusProviderFunc(func(_ context.Context, node repo.Node) (backendruntime.NodeRuntimeStatus, error) {
+			return backendruntime.NodeRuntimeStatus{NodeID: node.ID, Engine: backendruntime.EngineDash, Ready: true, Progress: backendruntime.ProgressStateSucceeded, Message: "dash runtime ready"}, nil
+		}),
+	}
+
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/node/check-status", nil)
+	res := httptest.NewRecorder()
+	h.nodeCheckStatus(res, req)
+
+	if res.Code != http.StatusOK {
+		t.Fatalf("expected status 200, got %d", res.Code)
+	}
+	node, err := r.GetNodeByID(1)
+	if err != nil {
+		t.Fatalf("GetNodeByID: %v", err)
+	}
+	if node == nil || node.Status != 1 {
+		t.Fatalf("expected persisted node status=1 after dash readiness check, got %+v", node)
+	}
+}
+
 func TestNodeCheckStatusPreservesExistingStatusForGostEngine(t *testing.T) {
 	r, err := repo.Open(filepath.Join(t.TempDir(), "panel.db"))
 	if err != nil {

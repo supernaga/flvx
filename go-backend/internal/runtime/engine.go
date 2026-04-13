@@ -2,6 +2,7 @@ package runtime
 
 import (
 	"context"
+	"fmt"
 
 	"go-backend/internal/store/repo"
 )
@@ -59,11 +60,17 @@ type SwitchProgress struct {
 }
 
 type NodeRuntimeStatus struct {
-	NodeID   int64
-	Engine   Engine
-	Ready    bool
-	Message  string
-	Progress ProgressState
+	NodeID     int64
+	Engine     Engine
+	Ready      bool
+	Message    string
+	Progress   ProgressState
+	ActiveExit *ActiveExitStatus
+}
+
+type ActiveExitStatus struct {
+	Server string
+	Token  string
 }
 
 type ServiceCheckRequest struct {
@@ -78,6 +85,41 @@ type ServiceCheckResult struct {
 	LatencyMs    float64
 	StatusCode   int
 	ErrorMessage string
+}
+
+type ForwardApplyStatus string
+
+const (
+	ForwardApplyStatusSuccess        ForwardApplyStatus = "success"
+	ForwardApplyStatusPartialSuccess ForwardApplyStatus = "partial_success"
+	ForwardApplyStatusFailed         ForwardApplyStatus = "failed"
+)
+
+type ForwardProtocolApplyResult struct {
+	Protocol string
+	RuleID   string
+	Status   ForwardApplyStatus
+	Message  string
+}
+
+type ForwardApplyResult struct {
+	ForwardID int64
+	NodeID    int64
+	Port      int
+	Status    ForwardApplyStatus
+	Protocols []ForwardProtocolApplyResult
+	Warnings  []string
+}
+
+func (r ForwardApplyResult) Error() string {
+	switch r.Status {
+	case ForwardApplyStatusPartialSuccess:
+		return fmt.Sprintf("forward %d node %d port %d applied partially", r.ForwardID, r.NodeID, r.Port)
+	case ForwardApplyStatusFailed:
+		return fmt.Sprintf("forward %d node %d port %d failed", r.ForwardID, r.NodeID, r.Port)
+	default:
+		return ""
+	}
 }
 
 type RuntimeClient interface {

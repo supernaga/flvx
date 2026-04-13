@@ -1756,14 +1756,15 @@ func (h *Handler) forwardCreate(w http.ResponseWriter, r *http.Request) {
 		response.WriteJSON(w, response.Err(-2, err.Error()))
 		return
 	}
-	if err := h.applyForwardRuntimeForCurrentEngine(r.Context(), tunnelID, func() error {
+	runtimeMeta, err := h.applyForwardRuntimeForCurrentEngineWithMetadata(r.Context(), forwardID, tunnelID, func() error {
 		return h.syncForwardServices(createdForward, "UpdateService", true)
-	}); err != nil {
+	})
+	if err != nil {
 		_ = h.deleteForwardByID(forwardID)
 		response.WriteJSON(w, response.ErrDefault(err.Error()))
 		return
 	}
-	response.WriteJSON(w, response.OKEmpty())
+	writeForwardMutationSuccess(w, nil, runtimeMeta)
 }
 
 func (h *Handler) forwardUpdate(w http.ResponseWriter, r *http.Request) {
@@ -1935,7 +1936,7 @@ func (h *Handler) forwardUpdate(w http.ResponseWriter, r *http.Request) {
 		time.Sleep(tunnelServiceBindRetryDelay)
 	}
 
-	err = h.reconcileForwardRuntimeForCurrentEngine(r.Context(), id, tunnelID, oldPorts, newPorts, func() error {
+	runtimeMeta, err := h.reconcileForwardRuntimeForCurrentEngineWithMetadata(r.Context(), id, tunnelID, oldPorts, newPorts, func() error {
 		syncWarnings, syncErr := h.syncForwardServicesWithWarnings(updatedForward, "UpdateService", true)
 		warnings = append(warnings, syncWarnings...)
 		return syncErr
@@ -1959,11 +1960,22 @@ func (h *Handler) forwardUpdate(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 	}
-	if len(warnings) > 0 {
-		response.WriteJSON(w, response.OK(map[string]interface{}{"warnings": warnings}))
+	writeForwardMutationSuccess(w, warnings, runtimeMeta)
+}
+
+func writeForwardMutationSuccess(w http.ResponseWriter, warnings []string, runtimeMeta *forwardRuntimeMetadata) {
+	if len(warnings) == 0 && runtimeMeta == nil {
+		response.WriteJSON(w, response.OKEmpty())
 		return
 	}
-	response.WriteJSON(w, response.OKEmpty())
+	payload := make(map[string]interface{})
+	if len(warnings) > 0 {
+		payload["warnings"] = warnings
+	}
+	if runtimeMeta != nil {
+		payload["runtime"] = *runtimeMeta
+	}
+	response.WriteJSON(w, response.OK(payload))
 }
 
 func (h *Handler) forwardDelete(w http.ResponseWriter, r *http.Request) {

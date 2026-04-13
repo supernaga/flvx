@@ -52,6 +52,17 @@ FLVX 现在支持一个**全局运行内核**设置：
 - 节点级同步摘要
 - 最近错误信息
 
+### Clean-room forward validation matrix
+
+当前 clean-room 转发校验仅发布一个最小覆盖矩阵，用于明确跨内核与协议的预期检查范围：
+
+- `gost tcp`
+- `gost udp`
+- `dash tcp`
+- `dash udp`
+
+这只是文档化的摘要矩阵，不引入新的生产逻辑或运行时行为。
+
 ### Docker Compose部署
 #### 快速部署（安装最新版）
 面板端：
