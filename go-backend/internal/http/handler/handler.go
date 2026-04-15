@@ -17,16 +17,19 @@ import (
 
 	"go-backend/internal/auth"
 	"go-backend/internal/health"
+	"go-backend/internal/http/client"
 	"go-backend/internal/http/middleware"
 	"go-backend/internal/http/response"
 	"go-backend/internal/license"
 	"go-backend/internal/metrics"
+	backendruntime "go-backend/internal/runtime"
 	"go-backend/internal/security"
 	"go-backend/internal/store/repo"
 	"go-backend/internal/ws"
 
 	"github.com/google/uuid"
 )
+
 type Handler struct {
 	repo        *repo.Repository
 	jwtSecret   string
@@ -46,6 +49,12 @@ type Handler struct {
 	pendingUpgradeRedeploy map[int64]struct{}
 
 	qualityProber *tunnelQualityProber
+	dashRuntime   *client.DashRuntimeClient
+	dashEnabled   bool
+
+	runtimeSwitchStarter   runtimeSwitchStarter
+	runtimeClients         map[backendruntime.Engine]backendruntime.RuntimeClient
+	runtimeStatusProviders map[backendruntime.Engine]runtimeStatusProvider
 }
 
 const monitorTunnelQualityEnabledConfigKey = "monitor_tunnel_quality_enabled"
@@ -93,6 +102,10 @@ const (
 )
 
 func New(repo *repo.Repository, jwtSecret string) *Handler {
+	return NewWithOptions(repo, jwtSecret, nil, false)
+}
+
+func NewWithOptions(repo *repo.Repository, jwtSecret string, dashRuntime *client.DashRuntimeClient, dashEnabled bool) *Handler {
 	h := &Handler{
 		repo:                   repo,
 		jwtSecret:              jwtSecret,
@@ -101,8 +114,19 @@ func New(repo *repo.Repository, jwtSecret string) *Handler {
 		healthCheck:            nil,
 		captchaTokens:          make(map[string]int64),
 		pendingUpgradeRedeploy: make(map[int64]struct{}),
+		dashRuntime:            dashRuntime,
+		dashEnabled:            dashEnabled,
 	}
-	h.healthCheck = health.NewChecker(repo, h.wsServer)
+	h.runtimeClients = map[backendruntime.Engine]backendruntime.RuntimeClient{
+		backendruntime.EngineGost: backendruntime.NewGostRuntimeClient(h.wsServer),
+		backendruntime.EngineDash: backendruntime.NewDashRuntimeClient(repo, dashRuntime),
+	}
+	h.runtimeStatusProviders = newRuntimeStatusProviders(dashRuntime)
+	h.runtimeSwitchStarter = newRuntimeSwitchStarter(repo, dashRuntime, dashEnabled)
+	h.healthCheck = health.NewChecker(repo, h.wsServer, func() backendruntime.RuntimeClient {
+		client, _ := h.currentRuntimeClient()
+		return client
+	})
 	h.qualityProber = newTunnelQualityProber(h)
 	h.wsServer.SetNodeOnlineHook(h.onNodeOnline)
 	h.wsServer.SetNodeMetricHook(func(nodeID int64, info ws.SystemInfo) {
@@ -236,6 +260,8 @@ func (h *Handler) Register(mux *http.ServeMux) {
 	mux.HandleFunc("/api/v1/federation/node/import", h.nodeImport)
 	mux.HandleFunc("/api/v1/announcement/get", h.getAnnouncement)
 	mux.HandleFunc("/api/v1/announcement/update", h.updateAnnouncement)
+	mux.HandleFunc("/api/v1/system/runtime", h.runtimeSettings)
+	mux.HandleFunc("/api/v1/system/runtime/progress", h.runtimeProgress)
 
 	mux.HandleFunc("/api/v1/monitor/access", h.monitorAccessHandler)
 	mux.HandleFunc("/api/v1/monitor/nodes/", h.monitorNodeMetricsHandler)
@@ -435,6 +461,7 @@ func (h *Handler) nodeList(w http.ResponseWriter, r *http.Request) {
 	}
 
 	h.syncRemoteNodeStatuses(items)
+	h.overlayCurrentRuntimeNodeStatuses(r.Context(), items)
 
 	response.WriteJSON(w, response.OK(items))
 }
@@ -852,7 +879,7 @@ func (h *Handler) licenseActivate(w http.ResponseWriter, r *http.Request) {
 				response.WriteJSON(w, response.ErrDefault("设备绑定失败: "+err.Error()))
 				return
 			}
-			
+
 			// Validation might still fail with scope if we don't query via machine id, but since activate machine succeeded
 			// we can consider the license valid for our simple usecase
 		} else {

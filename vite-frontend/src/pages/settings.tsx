@@ -10,6 +10,7 @@ import { Switch } from "@/shadcn-bridge/heroui/switch";
 import { reinitializeBaseURL } from "@/api/network";
 import { getConfigByName, updateConfig } from "@/api";
 import { BackIcon } from "@/components/icons";
+import { RuntimeEngineCard } from "@/pages/settings/runtime-engine-card";
 import {
   type UpdateReleaseChannel,
   getUpdateReleaseChannel,
@@ -245,6 +246,8 @@ export const SettingsPage = () => {
               </div>
             </CardBody>
           </Card>
+
+          {admin ? <RuntimeEngineCard /> : null}
 
           {/* 添加新地址 */}
           <Card>
