@@ -445,15 +445,15 @@ uninstall_flux_agent() {
 
   # 停止并禁用服务
   if systemctl list-units --full -all | grep -Fq "flux_agent.service"; then
-    echo "🛑 停止并禁用服务..."
+    echo "🛑 停止并禁用服务"
     systemctl stop flux_agent 2>/dev/null
     systemctl disable flux_agent 2>/dev/null
   fi
 
-  # 删除服务文件
   if [[ -f "/etc/systemd/system/flux_agent.service" ]]; then
     rm -f "/etc/systemd/system/flux_agent.service"
     echo "🧹 删除服务文件"
+  fi
   fi
 
   # 删除安装目录

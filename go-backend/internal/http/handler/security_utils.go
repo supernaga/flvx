@@ -15,7 +15,6 @@ func IsSafeRemoteAddr(addr string) error {
 	if DisableSafeRemoteAddrCheckForTesting {
 		return nil
 	}
-
 	host, _, err := net.SplitHostPort(addr)
 	if err != nil {
 		// If there is no port, try to treat the whole string as host

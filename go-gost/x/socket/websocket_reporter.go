@@ -1193,6 +1193,7 @@ func (w *WebSocketReporter) handleUpgradeAgent(data interface{}) error {
 	}
 
 	var req struct {
+		Engine          string `json:"engine"`
 		DownloadURL     string `json:"downloadUrl"`
 		ChecksumURL     string `json:"checksumUrl"`
 		DashDownloadURL string `json:"dashDownloadUrl"`
@@ -1203,6 +1204,11 @@ func (w *WebSocketReporter) handleUpgradeAgent(data interface{}) error {
 	}
 	if strings.TrimSpace(req.DownloadURL) == "" {
 		return fmt.Errorf("下载地址不能为空")
+	}
+
+	engine := strings.ToLower(strings.TrimSpace(req.Engine))
+	if engine == "" {
+		engine = "gost" // 默认兼容老版本
 	}
 
 	// 替换架构占位符
@@ -1323,29 +1329,39 @@ func (w *WebSocketReporter) handleUpgradeAgent(data interface{}) error {
 		return nil
 	}
 
-	if err := downloadFile(downloadURL, checksumURL, tmpPath, backupPath, "gost"); err != nil {
-		return err
-	}
-	_ = downloadFile(dashDownloadURL, dashChecksumURL, dashTmpPath, dashBackupPath, "dash")
-
-	w.sendUpgradeProgress("installing", 80, "准备重启...")
-
-	script := fmt.Sprintf("sleep 1 && systemctl stop flux_agent && mv %s %s", tmpPath, binaryPath)
-	if _, err := os.Stat(dashTmpPath); err == nil {
-		script += fmt.Sprintf(" && mv %s %s", dashTmpPath, dashBinaryPath)
-	}
-	script += " && systemctl start flux_agent"
-
-	cmd := exec.Command("systemd-run", "--quiet", "/bin/sh", "-c", script)
-	if err := cmd.Start(); err != nil {
-		os.Remove(tmpPath)
-		os.Remove(dashTmpPath)
-		return fmt.Errorf("启动重启脚本失败: %v", err)
+	if engine == "dash" {
+		if err := downloadFile(dashDownloadURL, dashChecksumURL, dashTmpPath, dashBackupPath, "dash"); err != nil {
+			return err
+		}
+	} else {
+		if err := downloadFile(downloadURL, checksumURL, tmpPath, backupPath, "gost"); err != nil {
+			return err
+		}
 	}
 
-	w.sendUpgradeProgress("installing", 100, "重启中...")
-	fmt.Println("🔄 重启脚本已启动, Agent 将在 1 秒后重启...")
-	return nil
+	if engine == "dash" {
+		w.sendUpgradeProgress("installing", 80, "正在重启 dash 内核...")
+		if err := ReplaceAndRestartDash(dashTmpPath); err != nil {
+			os.Remove(dashTmpPath)
+			return err
+		}
+		w.sendUpgradeProgress("installing", 100, "重启完成")
+		fmt.Println("🔄 dash 内核重启完成...")
+		return nil
+	} else {
+		w.sendUpgradeProgress("installing", 80, "准备重启...")
+		script := fmt.Sprintf("sleep 1 && systemctl stop flux_agent && mv %s %s && systemctl start flux_agent", tmpPath, binaryPath)
+
+		cmd := exec.Command("systemd-run", "--quiet", "/bin/sh", "-c", script)
+		if err := cmd.Start(); err != nil {
+			os.Remove(tmpPath)
+			return fmt.Errorf("启动重启脚本失败: %v", err)
+		}
+
+		w.sendUpgradeProgress("installing", 100, "重启中...")
+		fmt.Println("🔄 重启脚本已启动, Agent 将在 1 秒后重启...")
+		return nil
+	}
 }
 
 func (w *WebSocketReporter) handleRollbackAgent(data interface{}) error {
