@@ -1332,7 +1332,7 @@ func (w *WebSocketReporter) handleUpgradeAgent(data interface{}) error {
 
 	script := fmt.Sprintf("sleep 1 && systemctl stop flux_agent && mv %s %s", tmpPath, binaryPath)
 	if _, err := os.Stat(dashTmpPath); err == nil {
-		script += fmt.Sprintf(" && mv %s %s", dashTmpPath, dashBinaryPath)
+		script += fmt.Sprintf(" && systemctl stop dash && mv %s %s && systemctl start dash", dashTmpPath, dashBinaryPath)
 	}
 	script += " && systemctl start flux_agent"
 
