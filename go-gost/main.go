@@ -119,6 +119,8 @@ func main() {
 	log := xlogger.NewLogger()
 	logger.SetDefault(log)
 
+	socket.StartDashSupervisor(context.Background())
+
 	distro := socket.DetectDistro()
 	fullVersion := fmt.Sprintf("%s (%s/%s)", version, distro, runtime.GOARCH)
 	wsReporter := socket.StartWebSocketReporterWithConfig(config.Addr, config.Secret, config.Http, config.Tls, config.Socks, fullVersion)
