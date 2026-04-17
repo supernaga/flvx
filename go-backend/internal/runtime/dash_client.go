@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"net"
-	"strconv"
 	"strings"
 
 	"go-backend/internal/dashruntime"
@@ -384,7 +383,7 @@ func (c *DashRuntimeClient) rebuildTunnelRules(ctx context.Context, tunnelID int
 	if host == "" {
 		return nil
 	}
-	rule, err := dashruntime.BuildTunnelRule(*tunnel, inNodes[0].Port, net.JoinHostPort(strings.Trim(host, "[]"), strconv.Itoa(outNodes[0].Port)), chain, chainNodes, chainSecrets, nil)
+	rule, err := dashruntime.BuildTunnelRule(*tunnel, inNodes[0].Port, net.JoinHostPort(strings.Trim(host, "[]"), "18080"), chain, chainNodes, chainSecrets, nil)
 	if err != nil {
 		return err
 	}

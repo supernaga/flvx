@@ -157,7 +157,7 @@ func BuildStagePools(chain []model.ChainNodeRecord, nodes map[int64]model.NodeRe
 			Policy: normalizeStrategy(hop.Strategy),
 			Backends: []StageBackendPayload{{
 				ID:            fmt.Sprintf("node-%d", hop.NodeID),
-				Server:        fmt.Sprintf("%s:8080", node.ServerIP),
+				Server:        fmt.Sprintf("%s:18080", node.ServerIP),
 				Token:         secret,
 				Enabled:       true,
 				Weight:        1,
