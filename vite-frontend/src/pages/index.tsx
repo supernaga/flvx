@@ -161,9 +161,23 @@ export default function IndexPage() {
           <Card className="w-full bg-white/20 dark:bg-zinc-900/20 backdrop-blur-3xl shadow-[0_20px_40px_rgba(0,0,0,0.15)] border-white/80 dark:border-white/10 rounded-[32px] p-2 sm:p-4">
             <CardHeader className="pb-0 pt-6 px-6 flex-col items-center">
               <div className="w-14 h-14 bg-primary rounded-2xl flex items-center justify-center mb-4 shadow-sm text-white">
-                <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                <svg
+                  className="w-8 h-8"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    d="M13 10V3L4 14h7v7l9-11h-7z"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                  />
+                </svg>
               </div>
-              <h1 className="text-2xl font-bold tracking-tight text-foreground">Welcome to Flvx</h1>
+              <h1 className="text-2xl font-bold tracking-tight text-foreground">
+                Welcome to Flvx
+              </h1>
               <p className="text-sm text-default-500 mt-2 font-medium">
                 Sign in to manage your networks
               </p>
@@ -172,7 +186,8 @@ export default function IndexPage() {
               <div className="flex flex-col gap-5">
                 <Input
                   classNames={{
-                    inputWrapper: "bg-white/50 dark:bg-black/50 backdrop-blur-md border border-white/60 dark:border-white/10 h-12 shadow-sm rounded-xl",
+                    inputWrapper:
+                      "bg-white/50 dark:bg-black/50 backdrop-blur-md border border-white/60 dark:border-white/10 h-12 shadow-sm rounded-xl",
                     input: "text-base font-medium",
                   }}
                   errorMessage={errors.username}
@@ -190,7 +205,8 @@ export default function IndexPage() {
 
                 <Input
                   classNames={{
-                    inputWrapper: "bg-white/50 dark:bg-black/50 backdrop-blur-md border border-white/60 dark:border-white/10 h-12 shadow-sm rounded-xl",
+                    inputWrapper:
+                      "bg-white/50 dark:bg-black/50 backdrop-blur-md border border-white/60 dark:border-white/10 h-12 shadow-sm rounded-xl",
                     input: "text-base font-medium tracking-wider",
                   }}
                   isDisabled={loading}
@@ -212,7 +228,11 @@ export default function IndexPage() {
                   isLoading={loading}
                   onPress={handleLogin}
                 >
-                  {loading ? (showCaptcha ? "Verifying..." : "Signing in...") : "Sign In"}
+                  {loading
+                    ? showCaptcha
+                      ? "Verifying..."
+                      : "Signing in..."
+                    : "Sign In"}
                 </Button>
               </div>
             </CardBody>

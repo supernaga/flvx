@@ -198,19 +198,23 @@ export default function AdminLayout({
     if (adminFlag) {
       setMonitorAllowed(true);
       setMonitorAccessReason(null);
+
       return;
     }
 
     let cancelled = false;
+
     (async () => {
       try {
         const res = await getMonitorAccess();
+
         if (cancelled) return;
         if (res.code === 0 && res.data) {
           setMonitorAllowed(Boolean(res.data.allowed));
           setMonitorAccessReason(
-            res.data.allowed ? null : (res.data.reason || null),
+            res.data.allowed ? null : res.data.reason || null,
           );
+
           return;
         }
         // Fail open to preserve legacy navigation behavior.
@@ -408,6 +412,7 @@ export default function AdminLayout({
               return (
                 <li key={item.path}>
                   <motion.button
+                    aria-disabled={isMonitorBlocked}
                     className={`
                        w-full flex items-center p-3 rounded-2xl text-left
                        relative min-h-[48px] overflow-hidden transition-colors
@@ -415,12 +420,11 @@ export default function AdminLayout({
                        ${
                          isActive
                            ? "text-primary dark:text-primary-400 font-semibold"
-                            : isMonitorBlocked
-                              ? "text-gray-500 dark:text-gray-400 font-medium"
-                              : "text-gray-600 dark:text-gray-300 font-medium"
+                           : isMonitorBlocked
+                             ? "text-gray-500 dark:text-gray-400 font-medium"
+                             : "text-gray-600 dark:text-gray-300 font-medium"
                        }
                      `}
-                    aria-disabled={isMonitorBlocked}
                     title={
                       isCollapsed
                         ? isMonitorBlocked

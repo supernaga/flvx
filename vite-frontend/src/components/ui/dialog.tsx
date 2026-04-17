@@ -62,13 +62,15 @@ function DialogContent({
           "rounded-[24px] text-foreground shadow-[0_20px_60px_rgba(0,0,0,0.2)] dark:shadow-[0_20px_60px_rgba(0,0,0,0.5)] border border-white/80 dark:border-white/10",
           className,
         )}
+        data-slot="dialog-content"
         style={{
-          background: "linear-gradient(135deg, rgba(255,255,255,0.4) 0%, rgba(255,255,255,0.1) 40%, rgba(255,255,255,0.05) 60%, rgba(255,255,255,0.2) 100%)",
-          boxShadow: "inset 0 1px 1px rgba(255,255,255,0.8), inset 0 0 0 1px rgba(255,255,255,0.3), inset 0 -1px 1px rgba(0,0,0,0.1), 0 20px 60px rgba(0,0,0,0.2)",
+          background:
+            "linear-gradient(135deg, rgba(255,255,255,0.4) 0%, rgba(255,255,255,0.1) 40%, rgba(255,255,255,0.05) 60%, rgba(255,255,255,0.2) 100%)",
+          boxShadow:
+            "inset 0 1px 1px rgba(255,255,255,0.8), inset 0 0 0 1px rgba(255,255,255,0.3), inset 0 -1px 1px rgba(0,0,0,0.1), 0 20px 60px rgba(0,0,0,0.2)",
           backdropFilter: "blur(24px) saturate(180%)",
           WebkitBackdropFilter: "blur(24px) saturate(180%)",
         }}
-        data-slot="dialog-content"
         {...props}
       >
         <div className="flex flex-col flex-1 min-h-0 gap-4 p-6 rounded-[inherit] overflow-hidden bg-white/40 dark:bg-zinc-900/40 w-full h-full relative z-10 pointer-events-auto">

@@ -457,10 +457,7 @@ export default function PanelSharingPage() {
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {shares.map((share) => (
-                    <Card
-                      key={share.id}
-                      className="overflow-hidden"
-                    >
+                    <Card key={share.id} className="overflow-hidden">
                       <CardHeader className="flex justify-between pb-2 md:pb-2">
                         <h3 className="font-bold">{share.name}</h3>
                         <div className="flex gap-2">
@@ -604,10 +601,7 @@ export default function PanelSharingPage() {
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {remoteUsageNodes.map((node) => (
-                    <Card
-                      key={node.nodeId}
-                      className="overflow-hidden"
-                    >
+                    <Card key={node.nodeId} className="overflow-hidden">
                       <CardHeader className="flex justify-between pb-2 md:pb-2">
                         <h3 className="font-bold">{node.nodeName}</h3>
                         <span className="text-xs text-default-500">

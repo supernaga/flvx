@@ -349,17 +349,22 @@ export const useDashboardData = (): DashboardDataState => {
 
       if (res.code === 0 && res.data && res.data.enabled === 1) {
         setAnnouncement(res.data);
-        
+
         try {
-          const storedTimeStr = localStorage.getItem("flvx_announcement_seen_time");
+          const storedTimeStr = localStorage.getItem(
+            "flvx_announcement_seen_time",
+          );
           const storedTime = storedTimeStr ? parseInt(storedTimeStr, 10) : 0;
           const updateTime = res.data.update_time || 0;
-          
+
           if (updateTime > storedTime) {
             setIsAnnouncementModalOpen(true);
           }
         } catch (err) {
-          console.warn("Failed to read localStorage for announcement state", err);
+          console.warn(
+            "Failed to read localStorage for announcement state",
+            err,
+          );
           setIsAnnouncementModalOpen(true);
         }
       } else {
@@ -376,7 +381,10 @@ export const useDashboardData = (): DashboardDataState => {
     setIsAnnouncementModalOpen(false);
     if (announcement && announcement.update_time) {
       try {
-        localStorage.setItem("flvx_announcement_seen_time", announcement.update_time.toString());
+        localStorage.setItem(
+          "flvx_announcement_seen_time",
+          announcement.update_time.toString(),
+        );
       } catch (err) {
         console.warn("Failed to set localStorage for announcement state", err);
       }

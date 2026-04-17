@@ -1,13 +1,14 @@
+import type {
+  RuntimeEngineSettingsApiData,
+  RuntimeEngineUpdatePayload,
+} from "@/api/types";
+
 import axios, { type AxiosResponse } from "axios";
 
 import {
   extractApiErrorMessage,
   isUnauthorizedError,
 } from "@/api/error-message";
-import type {
-  RuntimeEngineSettingsApiData,
-  RuntimeEngineUpdatePayload,
-} from "@/api/types";
 import Network from "@/api/network";
 import { clearSession, getToken } from "@/utils/session";
 
@@ -25,10 +26,7 @@ const handleTokenExpired = () => {
   }
 };
 
-const put = async <T>(
-  path: string,
-  data: unknown,
-): Promise<ApiResponse<T>> => {
+const put = async <T>(path: string, data: unknown): Promise<ApiResponse<T>> => {
   if (!axios.defaults.baseURL) {
     return {
       code: -1,
@@ -38,13 +36,17 @@ const put = async <T>(
   }
 
   try {
-    const response: AxiosResponse<ApiResponse<T>> = await axios.put(path, data, {
-      timeout: 30_000,
-      headers: {
-        Authorization: getToken(),
-        "Content-Type": "application/json",
+    const response: AxiosResponse<ApiResponse<T>> = await axios.put(
+      path,
+      data,
+      {
+        timeout: 30_000,
+        headers: {
+          Authorization: getToken(),
+          "Content-Type": "application/json",
+        },
       },
-    });
+    );
 
     if (response.data?.code === 401) {
       handleTokenExpired();

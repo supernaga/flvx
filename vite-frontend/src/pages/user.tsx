@@ -1080,7 +1080,8 @@ export default function UserPage() {
             aria-label="用户列表"
             className="overflow-x-auto min-w-full"
             classNames={{
-              wrapper: "bg-transparent p-0 shadow-none border-none overflow-hidden rounded-2xl",
+              wrapper:
+                "bg-transparent p-0 shadow-none border-none overflow-hidden rounded-2xl",
               th: "bg-transparent text-default-600 font-semibold text-sm border-b border-white/20 dark:border-white/10 py-3 uppercase tracking-wider first:rounded-tl-[24px] last:rounded-tr-[24px]",
               td: "py-3 border-b border-divider/50 group-data-[last=true]:border-b-0",
               tr: "hover:bg-white/40 dark:hover:bg-white/10 transition-colors",
@@ -1108,7 +1109,9 @@ export default function UserPage() {
                       <div className="flex items-center gap-3">
                         <div className="flex items-center justify-center shrink-0 w-10 h-10 rounded-full bg-primary text-white font-bold text-sm relative">
                           {(user.name || user.user).slice(0, 2).toUpperCase()}
-                          <span className={`absolute bottom-0 right-0 w-3 h-3 border-2 border-white dark:border-zinc-900 rounded-full ${userStatus.color === "success" ? "bg-success" : "bg-danger"}`} />
+                          <span
+                            className={`absolute bottom-0 right-0 w-3 h-3 border-2 border-white dark:border-zinc-900 rounded-full ${userStatus.color === "success" ? "bg-success" : "bg-danger"}`}
+                          />
                         </div>
                         <div className="flex flex-col">
                           <span className="font-medium text-foreground text-sm">
@@ -1119,7 +1122,12 @@ export default function UserPage() {
                           </span>
                         </div>
                         {user.disabledByQuota && (
-                          <Chip className="text-[10px] h-4 px-1 ml-1" color="danger" size="sm" variant="flat">
+                          <Chip
+                            className="text-[10px] h-4 px-1 ml-1"
+                            color="danger"
+                            size="sm"
+                            variant="flat"
+                          >
                             超额
                           </Chip>
                         )}
@@ -1143,17 +1151,24 @@ export default function UserPage() {
                     </TableCell>
                     <TableCell>
                       <div className="flex flex-col gap-0.5 whitespace-nowrap text-[11px]">
-                        {((user.dailyQuotaGB ?? 0) > 0 || (user.monthlyQuotaGB ?? 0) > 0) ? (
-                            <>
-                              <div className="flex gap-1 justify-between">
-                                <span className="text-default-500">日配额:</span>
-                                <span>{formatFlow(user.dailyUsedBytes ?? 0)} / {formatQuotaLimit(user.dailyQuotaGB)}</span>
-                              </div>
-                              <div className="flex gap-1 justify-between">
-                                <span className="text-default-500">月配额:</span>
-                                <span>{formatFlow(user.monthlyUsedBytes ?? 0)} / {formatQuotaLimit(user.monthlyQuotaGB)}</span>
-                              </div>
-                            </>
+                        {(user.dailyQuotaGB ?? 0) > 0 ||
+                        (user.monthlyQuotaGB ?? 0) > 0 ? (
+                          <>
+                            <div className="flex gap-1 justify-between">
+                              <span className="text-default-500">日配额:</span>
+                              <span>
+                                {formatFlow(user.dailyUsedBytes ?? 0)} /{" "}
+                                {formatQuotaLimit(user.dailyQuotaGB)}
+                              </span>
+                            </div>
+                            <div className="flex gap-1 justify-between">
+                              <span className="text-default-500">月配额:</span>
+                              <span>
+                                {formatFlow(user.monthlyUsedBytes ?? 0)} /{" "}
+                                {formatQuotaLimit(user.monthlyQuotaGB)}
+                              </span>
+                            </div>
+                          </>
                         ) : (
                           <span className="text-default-400">无配额</span>
                         )}
@@ -1171,51 +1186,53 @@ export default function UserPage() {
                             </span>
                             {expStatus && (
                               <Chip
+                                className="h-5 px-1 text-[10px]"
                                 color={expStatus.color}
                                 size="sm"
                                 variant="flat"
-                                className="h-5 px-1 text-[10px]"
                               >
                                 {expStatus.text}
                               </Chip>
                             )}
                           </>
                         ) : (
-                          <span className="text-default-400 text-sm">无限期</span>
+                          <span className="text-default-400 text-sm">
+                            无限期
+                          </span>
                         )}
                       </div>
                     </TableCell>
                     <TableCell>
                       <div className="flex flex-wrap items-center gap-1.5 min-w-max">
                         <Button
+                          className="h-6 px-2 min-w-0 text-xs bg-emerald-50 text-emerald-600 hover:bg-emerald-100 dark:bg-emerald-950/30 dark:text-emerald-400"
                           size="sm"
                           variant="flat"
-                          className="h-6 px-2 min-w-0 text-xs bg-emerald-50 text-emerald-600 hover:bg-emerald-100 dark:bg-emerald-950/30 dark:text-emerald-400"
                           onPress={() => handleManageTunnels(user)}
                         >
                           权限
                         </Button>
                         <Button
-                          size="sm"
-                          variant="flat"
                           className="h-6 px-2 min-w-0 text-xs bg-amber-50 text-amber-600 hover:bg-amber-100 dark:bg-amber-950/30 dark:text-amber-400"
+                          size="sm"
                           title="重置流量"
+                          variant="flat"
                           onPress={() => handleResetFlow(user)}
                         >
                           重置
                         </Button>
                         <Button
+                          className="h-6 px-2 min-w-0 text-xs bg-indigo-50 text-indigo-600 hover:bg-indigo-100 dark:bg-indigo-950/30 dark:text-indigo-400"
                           size="sm"
                           variant="flat"
-                          className="h-6 px-2 min-w-0 text-xs bg-indigo-50 text-indigo-600 hover:bg-indigo-100 dark:bg-indigo-950/30 dark:text-indigo-400"
                           onPress={() => handleEdit(user)}
                         >
                           编辑
                         </Button>
                         <Button
+                          className="h-6 px-2 min-w-0 text-xs bg-rose-50 text-rose-600 hover:bg-rose-100 dark:bg-rose-950/30 dark:text-rose-400"
                           size="sm"
                           variant="flat"
-                          className="h-6 px-2 min-w-0 text-xs bg-rose-50 text-rose-600 hover:bg-rose-100 dark:bg-rose-950/30 dark:text-rose-400"
                           onPress={() => handleDelete(user)}
                         >
                           删除
@@ -1252,7 +1269,9 @@ export default function UserPage() {
                       <div className="flex items-center gap-3 flex-1 min-w-0">
                         <div className="flex items-center justify-center shrink-0 w-10 h-10 rounded-full bg-primary text-white font-bold text-sm relative">
                           {(user.name || user.user).slice(0, 2).toUpperCase()}
-                          <span className={`absolute bottom-0 right-0 w-3 h-3 border-2 border-white dark:border-zinc-900 rounded-full ${userStatus.color === "success" ? "bg-success" : "bg-danger"}`} />
+                          <span
+                            className={`absolute bottom-0 right-0 w-3 h-3 border-2 border-white dark:border-zinc-900 rounded-full ${userStatus.color === "success" ? "bg-success" : "bg-danger"}`}
+                          />
                         </div>
                         <div className="flex flex-col min-w-0">
                           <h3 className="font-semibold text-foreground truncate text-sm">

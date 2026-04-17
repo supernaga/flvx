@@ -114,15 +114,18 @@ export default function H5Layout({ children }: { children: React.ReactNode }) {
     }
 
     let cancelled = false;
+
     (async () => {
       try {
         const res = await getMonitorAccess();
+
         if (cancelled) return;
         if (res.code === 0 && res.data) {
           setMonitorAllowed(Boolean(res.data.allowed));
           setMonitorAccessReason(
-            res.data.allowed ? null : (res.data.reason || null),
+            res.data.allowed ? null : res.data.reason || null,
           );
+
           return;
         }
         setMonitorAllowed(true);

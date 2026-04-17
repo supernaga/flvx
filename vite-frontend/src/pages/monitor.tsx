@@ -2,7 +2,13 @@ import type { MonitorNodeApiItem } from "@/api/types";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
-import { RefreshCw, LayoutGrid, List, Server, ArrowRightLeft } from "lucide-react";
+import {
+  RefreshCw,
+  LayoutGrid,
+  List,
+  Server,
+  ArrowRightLeft,
+} from "lucide-react";
 
 import { AnimatedPage } from "@/components/animated-page";
 import { Button } from "@/shadcn-bridge/heroui/button";
@@ -38,11 +44,16 @@ export default function MonitorPage() {
   const [viewMode, setViewMode] = useState<"list" | "grid">("list");
   const [activeTab, setActiveTab] = useState<MonitorTab>("nodes");
 
-  const [realtimeNodeStatus, setRealtimeNodeStatus] = useState<Record<number, "online" | "offline">>({});
-  const [realtimeNodeMetrics, setRealtimeNodeMetrics] = useState<Record<number, any>>({});
+  const [realtimeNodeStatus, setRealtimeNodeStatus] = useState<
+    Record<number, "online" | "offline">
+  >({});
+  const [realtimeNodeMetrics, setRealtimeNodeMetrics] = useState<
+    Record<number, any>
+  >({});
 
   const handleRealtimeMessage = useCallback((message: any) => {
     const nodeId = Number(message?.id ?? 0);
+
     if (!nodeId || Number.isNaN(nodeId)) return;
 
     const type = String(message?.type ?? "");
@@ -50,15 +61,18 @@ export default function MonitorPage() {
 
     if (type === "status") {
       const status = Number(payload);
+
       setRealtimeNodeStatus((prev) => ({
         ...prev,
         [nodeId]: status === 1 ? "online" : "offline",
       }));
+
       return;
     }
 
     if (type === "metric") {
       let raw = payload;
+
       if (typeof raw === "string") {
         try {
           raw = JSON.parse(raw);
@@ -77,7 +91,7 @@ export default function MonitorPage() {
           netOutSpeed: Number(metric.netOutSpeed ?? metric.net_out_speed ?? 0),
           tcpConns: Number(metric.tcpConns ?? metric.tcp_conns ?? 0),
           udpConns: Number(metric.udpConns ?? metric.udp_conns ?? 0),
-        }
+        },
       }));
     }
   }, []);
@@ -89,6 +103,7 @@ export default function MonitorPage() {
 
   const loadNodes = useCallback(async (options?: { silent?: boolean }) => {
     const silent = options?.silent ?? false;
+
     if (!silent) setNodesLoading(true);
     try {
       const response = await getMonitorNodes();
@@ -133,7 +148,9 @@ export default function MonitorPage() {
       .map((n) => ({
         id: Number(n.id),
         name: String(n.name ?? ""),
-        connectionStatus: realtimeNodeStatus[Number(n.id)] || (n.status === 1 ? "online" : "offline"),
+        connectionStatus:
+          realtimeNodeStatus[Number(n.id)] ||
+          (n.status === 1 ? "online" : "offline"),
         version: n.version,
       }));
 
@@ -151,6 +168,7 @@ export default function MonitorPage() {
       if (node.connectionStatus === "online") {
         onlineCount++;
         const metric = realtimeNodeMetrics[node.id];
+
         if (metric) {
           totalCpu += metric.cpuUsage;
           totalConns += metric.tcpConns + metric.udpConns;
@@ -161,6 +179,7 @@ export default function MonitorPage() {
     });
 
     const avgCpu = onlineCount > 0 ? totalCpu / onlineCount : 0;
+
     return {
       avgCpu,
       totalConns,
@@ -174,10 +193,14 @@ export default function MonitorPage() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
         <div className="rounded-3xl border border-white/80 dark:border-white/10 bg-white/20 dark:bg-zinc-900/20 backdrop-blur-3xl shadow-[0_10px_30px_rgba(0,0,0,0.1)] p-6 relative overflow-hidden flex flex-col justify-between h-40">
           <div className="flex justify-between items-center z-10 relative">
-            <span className="text-default-600 font-medium text-sm">System Load</span>
+            <span className="text-default-600 font-medium text-sm">
+              System Load
+            </span>
           </div>
           <div className="z-10 relative">
-            <span className="text-4xl font-bold text-foreground">{aggregateMetrics.avgCpu.toFixed(1)}%</span>
+            <span className="text-4xl font-bold text-foreground">
+              {aggregateMetrics.avgCpu.toFixed(1)}%
+            </span>
           </div>
           <div className="absolute bottom-0 left-0 right-0 h-12 flex items-end gap-1 px-6 pb-4 opacity-50 z-0">
             <div className="w-full bg-primary/40 h-2 rounded-t-sm" />
@@ -191,10 +214,14 @@ export default function MonitorPage() {
 
         <div className="rounded-3xl border border-white/80 dark:border-white/10 bg-white/20 dark:bg-zinc-900/20 backdrop-blur-3xl shadow-[0_10px_30px_rgba(0,0,0,0.1)] p-6 relative overflow-hidden flex flex-col justify-between h-40">
           <div className="flex justify-between items-center z-10 relative">
-            <span className="text-default-600 font-medium text-sm">Active Connections</span>
+            <span className="text-default-600 font-medium text-sm">
+              Active Connections
+            </span>
           </div>
           <div className="z-10 relative">
-            <span className="text-4xl font-bold text-foreground">{aggregateMetrics.totalConns}</span>
+            <span className="text-4xl font-bold text-foreground">
+              {aggregateMetrics.totalConns}
+            </span>
           </div>
           <div className="absolute bottom-0 left-0 right-0 h-12 flex items-end gap-1 px-6 pb-4 opacity-50 z-0">
             <div className="w-full bg-success/40 h-3.5 rounded-t-sm" />
@@ -208,10 +235,14 @@ export default function MonitorPage() {
 
         <div className="rounded-3xl border border-white/80 dark:border-white/10 bg-white/20 dark:bg-zinc-900/20 backdrop-blur-3xl shadow-[0_10px_30px_rgba(0,0,0,0.1)] p-6 relative overflow-hidden flex flex-col justify-between h-40">
           <div className="flex justify-between items-center z-10 relative">
-            <span className="text-default-600 font-medium text-sm">Bandwidth</span>
+            <span className="text-default-600 font-medium text-sm">
+              Bandwidth
+            </span>
           </div>
           <div className="z-10 relative">
-            <span className="text-4xl font-bold text-foreground">{formatBytesPerSecond(aggregateMetrics.totalBandwidth)}</span>
+            <span className="text-4xl font-bold text-foreground">
+              {formatBytesPerSecond(aggregateMetrics.totalBandwidth)}
+            </span>
           </div>
           <div className="absolute bottom-0 left-0 right-0 h-12 flex items-end gap-1 px-6 pb-4 opacity-50 z-0">
             <div className="w-full bg-secondary/40 h-2 rounded-t-sm" />
@@ -236,7 +267,11 @@ export default function MonitorPage() {
               variant="flat"
               onPress={() => setViewMode(viewMode === "list" ? "grid" : "list")}
             >
-              {viewMode === "list" ? <LayoutGrid className="w-4 h-4" /> : <List className="w-4 h-4" />}
+              {viewMode === "list" ? (
+                <LayoutGrid className="w-4 h-4" />
+              ) : (
+                <List className="w-4 h-4" />
+              )}
             </Button>
             {activeTab === "nodes" && (
               <Button

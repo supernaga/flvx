@@ -149,9 +149,12 @@ export const deleteTunnelWithForwards = (data: {
     data,
   );
 export const previewBatchTunnelDelete = (ids: number[]) =>
-  Network.post<TunnelBatchDeletePreviewApiData>("/tunnel/batch-delete-preview", {
-    ids,
-  });
+  Network.post<TunnelBatchDeletePreviewApiData>(
+    "/tunnel/batch-delete-preview",
+    {
+      ids,
+    },
+  );
 export const batchDeleteTunnelsWithForwards = (data: {
   ids: number[];
   action: "replace" | "delete_forwards";
@@ -496,12 +499,14 @@ export const getServiceMonitorResults = (
   options?: { limit?: number; start?: number; end?: number },
 ) => {
   const params: Record<string, string> = {};
+
   if (options?.start != null && options?.end != null) {
     params.start = String(options.start);
     params.end = String(options.end);
   } else if (options?.limit != null) {
     params.limit = String(options.limit);
   }
+
   return Network.get<ServiceMonitorResultApiItem[]>(
     `/monitor/services/${monitorId}/results`,
     params,
