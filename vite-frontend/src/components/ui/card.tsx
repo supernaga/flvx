@@ -1,4 +1,5 @@
 import * as React from "react";
+
 import { cn } from "@/lib/utils";
 
 function Card({ className, style, ...props }: React.ComponentProps<"div">) {
@@ -7,16 +8,18 @@ function Card({ className, style, ...props }: React.ComponentProps<"div">) {
       className={cn(
         "relative flex flex-col transition-all duration-300",
         "rounded-[24px] text-card-foreground shadow-[0_12px_40px_rgba(0,0,0,0.12)] dark:shadow-[0_12px_40px_rgba(0,0,0,0.4)]",
-        className
+        className,
       )}
+      data-slot="card"
       style={{
         ...style,
-        background: "linear-gradient(135deg, rgba(255,255,255,0.4) 0%, rgba(255,255,255,0.1) 40%, rgba(255,255,255,0.05) 60%, rgba(255,255,255,0.2) 100%)",
-        boxShadow: "inset 0 1px 1px rgba(255,255,255,0.8), inset 0 0 0 1px rgba(255,255,255,0.3), inset 0 -1px 1px rgba(0,0,0,0.1), 0 12px 40px rgba(0,0,0,0.12)",
+        background:
+          "linear-gradient(135deg, rgba(255,255,255,0.4) 0%, rgba(255,255,255,0.1) 40%, rgba(255,255,255,0.05) 60%, rgba(255,255,255,0.2) 100%)",
+        boxShadow:
+          "inset 0 1px 1px rgba(255,255,255,0.8), inset 0 0 0 1px rgba(255,255,255,0.3), inset 0 -1px 1px rgba(0,0,0,0.1), 0 12px 40px rgba(0,0,0,0.12)",
         backdropFilter: "blur(24px) saturate(180%)",
         WebkitBackdropFilter: "blur(24px) saturate(180%)",
       }}
-      data-slot="card"
       {...props}
     />
   );
@@ -63,11 +66,7 @@ function CardDescription({ className, ...props }: React.ComponentProps<"p">) {
 
 function CardContent({ className, ...props }: React.ComponentProps<"div">) {
   return (
-    <div
-      className={cn("p-6", className)}
-      data-slot="card-content"
-      {...props}
-    />
+    <div className={cn("p-6", className)} data-slot="card-content" {...props} />
   );
 }
 

@@ -1,4 +1,8 @@
 import type { AnnouncementData } from "@/api";
+
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+
 import { Button } from "@/shadcn-bridge/heroui/button";
 import {
   Modal,
@@ -7,8 +11,6 @@ import {
   ModalFooter,
   ModalHeader,
 } from "@/shadcn-bridge/heroui/modal";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
 
 interface AnnouncementModalProps {
   announcement: AnnouncementData;
@@ -24,7 +26,11 @@ export const AnnouncementModal = ({
   onDontShowAgain,
 }: AnnouncementModalProps) => {
   return (
-    <Modal isOpen={isOpen} onOpenChange={(open) => !open && onClose()} size="2xl">
+    <Modal
+      isOpen={isOpen}
+      size="2xl"
+      onOpenChange={(open) => !open && onClose()}
+    >
       <ModalContent>
         <ModalHeader className="flex flex-col gap-1">平台公告</ModalHeader>
         <ModalBody>

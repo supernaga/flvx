@@ -1,3 +1,9 @@
+import type {
+  RuntimeEngine,
+  RuntimeEngineSettingsApiData,
+  RuntimeNodeProgressApiItem,
+} from "@/api/types";
+
 import { useCallback, useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 
@@ -6,11 +12,6 @@ import {
   getRuntimeEngineSettings,
   updateRuntimeEngineSettings,
 } from "@/api";
-import type {
-  RuntimeEngine,
-  RuntimeEngineSettingsApiData,
-  RuntimeNodeProgressApiItem,
-} from "@/api/types";
 import { Alert } from "@/shadcn-bridge/heroui/alert";
 import { Button } from "@/shadcn-bridge/heroui/button";
 import { Card, CardBody } from "@/shadcn-bridge/heroui/card";
@@ -25,7 +26,9 @@ const ENGINE_LABELS: Record<RuntimeEngine, string> = {
   dash: "Dash",
 };
 
-const getSwitchStatusMeta = (status: RuntimeEngineSettingsApiData["switchStatus"]) => {
+const getSwitchStatusMeta = (
+  status: RuntimeEngineSettingsApiData["switchStatus"],
+) => {
   switch (status) {
     case "switching":
       return { label: "切换中", color: "warning" as const };
@@ -82,7 +85,9 @@ const isProgressActive = (settings: RuntimeEngineSettingsApiData | null) => {
   );
 };
 
-const shouldShowNodeDetails = (settings: RuntimeEngineSettingsApiData | null) => {
+const shouldShowNodeDetails = (
+  settings: RuntimeEngineSettingsApiData | null,
+) => {
   if (!settings || settings.nodes.length === 0) {
     return false;
   }
@@ -100,7 +105,10 @@ export const RuntimeEngineCard = () => {
   const [requestError, setRequestError] = useState("");
 
   const applySettings = useCallback(
-    (nextSettings: RuntimeEngineSettingsApiData | null, errorMessage?: string) => {
+    (
+      nextSettings: RuntimeEngineSettingsApiData | null,
+      errorMessage?: string,
+    ) => {
       if (nextSettings) {
         setSettings(nextSettings);
         setRequestError("");
@@ -121,13 +129,18 @@ export const RuntimeEngineCard = () => {
       if (!previous) {
         return previous;
       }
+
       return {
         ...previous,
-        switchStatus: previous.switchStatus === "switching" ? "failed" : previous.switchStatus,
+        switchStatus:
+          previous.switchStatus === "switching"
+            ? "failed"
+            : previous.switchStatus,
         runtimeProgress: {
           ...previous.runtimeProgress,
           state: "failed",
-          message: message || previous.runtimeProgress.message || "刷新切换进度失败",
+          message:
+            message || previous.runtimeProgress.message || "刷新切换进度失败",
         },
       };
     });
@@ -151,8 +164,10 @@ export const RuntimeEngineCard = () => {
 
   const loadProgress = useCallback(async () => {
     const response = await getRuntimeEngineProgress();
+
     if (response.code === 0 && response.data) {
       applySettings(response.data, response.msg);
+
       return;
     }
     markProgressRequestFailed(response.msg || "刷新切换进度失败");
@@ -211,9 +226,14 @@ export const RuntimeEngineCard = () => {
     }
   };
 
-  const controlsDisabled = !admin || loading || !!savingEngine || activeProgress;
-  const switchStatus = settings ? getSwitchStatusMeta(settings.switchStatus) : null;
-  const runtimeState = settings ? getProgressMeta(settings.runtimeProgress.state) : null;
+  const controlsDisabled =
+    !admin || loading || !!savingEngine || activeProgress;
+  const switchStatus = settings
+    ? getSwitchStatusMeta(settings.switchStatus)
+    : null;
+  const runtimeState = settings
+    ? getProgressMeta(settings.runtimeProgress.state)
+    : null;
   const showNodeDetails = shouldShowNodeDetails(settings);
 
   return (
@@ -250,14 +270,20 @@ export const RuntimeEngineCard = () => {
         ) : null}
 
         {!loading && requestError && !settings ? (
-          <Alert color="danger" description={requestError} title="加载运行时设置失败" />
+          <Alert
+            color="danger"
+            description={requestError}
+            title="加载运行时设置失败"
+          />
         ) : null}
 
         {settings ? (
           <>
             <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
               <div className="rounded-lg border border-gray-200 px-4 py-3 dark:border-gray-700">
-                <p className="text-xs text-gray-500 dark:text-gray-400">当前引擎</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  当前引擎
+                </p>
                 <p className="mt-1 text-base font-medium text-gray-900 dark:text-white">
                   {ENGINE_LABELS[settings.currentEngine]}
                 </p>
@@ -266,7 +292,9 @@ export const RuntimeEngineCard = () => {
                 </p>
               </div>
               <div className="rounded-lg border border-gray-200 px-4 py-3 dark:border-gray-700">
-                <p className="text-xs text-gray-500 dark:text-gray-400">节点同步概览</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  节点同步概览
+                </p>
                 <div className="mt-2 flex flex-wrap gap-2">
                   <Chip color="primary" size="sm" variant="flat">
                     总计 {settings.nodeSummary.total}
@@ -300,7 +328,12 @@ export const RuntimeEngineCard = () => {
 
             {settings.rebuildProgress?.message ? (
               <Alert
-                color={getProgressMeta(settings.rebuildProgress.state).color === "danger" ? "danger" : "default"}
+                color={
+                  getProgressMeta(settings.rebuildProgress.state).color ===
+                  "danger"
+                    ? "danger"
+                    : "default"
+                }
                 description={`${settings.rebuildProgress.message}${settings.rebuildProgress.phase ? `（阶段：${getPhaseLabel(settings.rebuildProgress.phase)}）` : ""}`}
                 title={`运行时重建：${getProgressMeta(settings.rebuildProgress.state).label}`}
               />

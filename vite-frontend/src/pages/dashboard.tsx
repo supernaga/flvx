@@ -651,25 +651,44 @@ export default function DashboardPage() {
       {/* 顶部个人状态和下拉菜单 */}
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h1 className="text-2xl lg:text-3xl font-bold text-foreground">Good morning, {username}</h1>
-          <p className="text-sm text-default-500 mt-1">Here's what's happening with your network today.</p>
+          <h1 className="text-2xl lg:text-3xl font-bold text-foreground">
+            Good morning, {username}
+          </h1>
+          <p className="text-sm text-default-500 mt-1">
+            Here&apos;s what&apos;s happening with your network today.
+          </p>
         </div>
         <div className="flex items-center gap-3">
           <Dropdown placement="bottom-end">
             <DropdownTrigger>
               <Button
-                className="rounded-full w-10 h-10 min-w-0 bg-primary text-white font-bold text-sm shadow-[0_4px_12px_rgba(0,122,255,0.3)]"
                 isIconOnly
+                className="rounded-full w-10 h-10 min-w-0 bg-primary text-white font-bold text-sm shadow-[0_4px_12px_rgba(0,122,255,0.3)]"
                 variant="solid"
               >
                 {username.slice(0, 2).toUpperCase()}
               </Button>
             </DropdownTrigger>
-            <DropdownMenu aria-label="用户菜单" className="bg-white/80 dark:bg-zinc-900/80 backdrop-blur-xl border border-white/50 dark:border-white/10 rounded-2xl shadow-[0_10px_30px_rgba(0,0,0,0.1)]">
+            <DropdownMenu
+              aria-label="用户菜单"
+              className="bg-white/80 dark:bg-zinc-900/80 backdrop-blur-xl border border-white/50 dark:border-white/10 rounded-2xl shadow-[0_10px_30px_rgba(0,0,0,0.1)]"
+            >
               <DropdownItem
                 key="profile"
                 startContent={
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+                  <svg
+                    className="w-4 h-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                    />
+                  </svg>
                 }
                 onPress={() => navigate("/profile")}
               >
@@ -680,7 +699,17 @@ export default function DashboardPage() {
                 className="text-danger"
                 color="danger"
                 startContent={
-                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M3 3a1 1 0 00-1 1v12a1 1 0 102 0V4a1 1 0 00-1-1zm10.293 9.293a1 1 0 001.414 1.414l3-3a1 1 0 000-1.414l-3-3a1 1 0 10-1.414 1.414L14.586 9H7a1 1 0 100 2h7.586l-1.293 1.293z" clipRule="evenodd" /></svg>
+                  <svg
+                    className="w-4 h-4"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                  >
+                    <path
+                      clipRule="evenodd"
+                      d="M3 3a1 1 0 00-1 1v12a1 1 0 102 0V4a1 1 0 00-1-1zm10.293 9.293a1 1 0 001.414 1.414l3-3a1 1 0 000-1.414l-3-3a1 1 0 10-1.414 1.414L14.586 9H7a1 1 0 100 2h7.586l-1.293 1.293z"
+                      fillRule="evenodd"
+                    />
+                  </svg>
                 }
                 onPress={handleLogout}
               >

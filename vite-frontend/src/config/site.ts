@@ -32,8 +32,10 @@ const getInitialConfig = () => {
     localStorage.getItem(CACHE_PREFIX + "app_favicon") || "";
   const cachedAppBgImage =
     localStorage.getItem(CACHE_PREFIX + "app_bg_image") || "";
-  const isCommercial = localStorage.getItem(CACHE_PREFIX + "is_commercial") === "true";
-  const hideFooterBrand = localStorage.getItem(CACHE_PREFIX + "hide_footer_brand") === "true";
+  const isCommercial =
+    localStorage.getItem(CACHE_PREFIX + "is_commercial") === "true";
+  const hideFooterBrand =
+    localStorage.getItem(CACHE_PREFIX + "hide_footer_brand") === "true";
 
   if (cachedAppName) {
     return {

@@ -13,7 +13,9 @@ const updateSW = registerSW({
     toast(
       (t) => (
         <div className="flex flex-col gap-3">
-          <span className="text-sm font-medium text-foreground">发现新版本，是否立即刷新以应用更新？</span>
+          <span className="text-sm font-medium text-foreground">
+            发现新版本，是否立即刷新以应用更新？
+          </span>
           <div className="flex gap-2 justify-end">
             <button
               className="px-3 py-1.5 text-xs font-medium bg-primary text-primary-foreground hover:bg-primary/90 rounded-md transition-colors"
@@ -33,7 +35,7 @@ const updateSW = registerSW({
           </div>
         </div>
       ),
-      { duration: Infinity, position: "bottom-right" }
+      { duration: Infinity, position: "bottom-right" },
     );
   },
 });

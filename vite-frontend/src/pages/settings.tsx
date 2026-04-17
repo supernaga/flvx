@@ -111,6 +111,7 @@ export const SettingsPage = () => {
   const loadForwardCompactMode = async () => {
     try {
       const res = await getConfigByName(FORWARD_COMPACT_MODE_CONFIG_KEY);
+
       setForwardCompactMode(parseBooleanConfig(res.data?.value, false));
     } catch {
       setForwardCompactMode(false);

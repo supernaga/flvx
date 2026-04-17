@@ -89,7 +89,8 @@ const CONFIG_ITEMS: ConfigItem[] = [
   {
     key: "app_bg_image",
     label: "自定义背景",
-    description: "上传自定义背景图片（建议使用深色/浅色均可看清的图片，或使用半透明模糊效果）",
+    description:
+      "上传自定义背景图片（建议使用深色/浅色均可看清的图片，或使用半透明模糊效果）",
     type: "bg_image",
   },
   {
@@ -141,7 +142,8 @@ const CONFIG_ITEMS: ConfigItem[] = [
   {
     key: "monitor_tunnel_quality_enabled",
     label: "实时隧道质量检测",
-    description: "关闭后，前端停止自动刷新，后端停止实时隧道质量探测（全局配置）",
+    description:
+      "关闭后，前端停止自动刷新，后端停止实时隧道质量探测（全局配置）",
     type: "switch",
   },
   {
@@ -388,11 +390,13 @@ export default function ConfigPage() {
   const handleActivateLicense = async () => {
     if (!licenseKeyInput.trim()) {
       toast.error("请输入有效的商业授权码");
+
       return;
     }
     setActivatingLicense(true);
     try {
       const res = await activateLicense(licenseKeyInput.trim());
+
       if (res.code === 0) {
         toast.success("商业版授权激活成功！");
         setLicenseKeyInput("");
@@ -479,7 +483,9 @@ export default function ConfigPage() {
         if (changedKeys.includes("monitor_tunnel_quality_enabled")) {
           window.dispatchEvent(
             new CustomEvent("monitorTunnelQualityEnabledChanged", {
-              detail: { enabled: configs["monitor_tunnel_quality_enabled"] === "true" },
+              detail: {
+                enabled: configs["monitor_tunnel_quality_enabled"] === "true",
+              },
             }),
           );
         }
@@ -496,7 +502,11 @@ export default function ConfigPage() {
   // 检查配置项是否应该显示（依赖检查）
   const shouldShowItem = (item: ConfigItem): boolean => {
     // 隐藏商业版专属的设置项，它们会在专门的卡片中展示
-    if (["app_name", "app_logo", "app_favicon", "hide_footer_brand"].includes(item.key)) {
+    if (
+      ["app_name", "app_logo", "app_favicon", "hide_footer_brand"].includes(
+        item.key,
+      )
+    ) {
       return false;
     }
 
@@ -555,12 +565,16 @@ export default function ConfigPage() {
     }
   };
 
-  const handleBgImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleBgImageUpload = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+  ) => {
     const file = e.target.files?.[0];
+
     if (!file) return;
 
     if (!file.type.startsWith("image/")) {
       toast.error("只能上传图片文件");
+
       return;
     }
 
@@ -568,8 +582,10 @@ export default function ConfigPage() {
     try {
       const compressedImage = await new Promise<string>((resolve, reject) => {
         const reader = new FileReader();
+
         reader.onload = (event) => {
           const img = new Image();
+
           img.onload = () => {
             const canvas = document.createElement("canvas");
             let width = img.width;
@@ -592,14 +608,17 @@ export default function ConfigPage() {
             canvas.width = width;
             canvas.height = height;
             const ctx = canvas.getContext("2d");
+
             if (!ctx) {
               reject(new Error("Canvas context is null"));
+
               return;
             }
             ctx.drawImage(img, 0, 0, width, height);
-            
+
             // Output as webp for better compression
             const dataUrl = canvas.toDataURL("image/webp", 0.8);
+
             resolve(dataUrl);
           };
           img.onerror = () => reject(new Error("图片加载失败"));
@@ -621,62 +640,66 @@ export default function ConfigPage() {
 
   const renderBgImageUploader = () => {
     const bgImage = configs["app_bg_image"] || "";
-    const isImage = bgImage.startsWith("http") || bgImage.startsWith("data:") || bgImage.startsWith("/") || bgImage.startsWith("blob:");
+    const isImage =
+      bgImage.startsWith("http") ||
+      bgImage.startsWith("data:") ||
+      bgImage.startsWith("/") ||
+      bgImage.startsWith("blob:");
     const isTheme = bgImage === "theme";
     const isSolidColor = bgImage && !isImage && !isTheme;
-    
+
     return (
       <div className="flex flex-col gap-4 w-full">
         <div className="flex flex-wrap items-center gap-4">
           <input
-            type="file"
-            accept="image/*"
             ref={bgImageFileInputRef}
+            accept="image/*"
             className="hidden"
+            type="file"
             onChange={handleBgImageUpload}
           />
           <Button
             color="primary"
+            isLoading={bgImageUploading}
             variant="flat"
             onPress={() => bgImageFileInputRef.current?.click()}
-            isLoading={bgImageUploading}
           >
             上传图片
           </Button>
           <Button
             color="secondary"
+            isDisabled={bgImageUploading || isTheme}
             variant="flat"
             onPress={() => handleConfigChange("app_bg_image", "theme")}
-            isDisabled={bgImageUploading || isTheme}
           >
             自适应纯色 (跟随深色模式)
           </Button>
           <Button
             color="default"
+            isDisabled={bgImageUploading || bgImage === "#ffffff"}
             variant="flat"
             onPress={() => handleConfigChange("app_bg_image", "#ffffff")}
-            isDisabled={bgImageUploading || bgImage === "#ffffff"}
           >
             白色纯色
           </Button>
           {bgImage && (
             <Button
               color="danger"
+              isDisabled={bgImageUploading}
               variant="flat"
               onPress={() => handleConfigChange("app_bg_image", "")}
-              isDisabled={bgImageUploading}
             >
               恢复默认
             </Button>
           )}
         </div>
-        
+
         {bgImage && isImage && (
           <div className="relative rounded-xl overflow-hidden border border-divider">
             <img
-              src={bgImage}
               alt="背景预览"
               className="w-full max-h-48 object-cover opacity-80"
+              src={bgImage}
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent flex items-end p-4">
               <span className="text-white text-sm font-medium">预览效果</span>
@@ -686,13 +709,15 @@ export default function ConfigPage() {
 
         {bgImage && isTheme && (
           <div className="relative rounded-xl border border-divider bg-background h-32 flex items-center justify-center">
-            <span className="text-foreground text-sm font-medium">当前为自适应纯色背景</span>
+            <span className="text-foreground text-sm font-medium">
+              当前为自适应纯色背景
+            </span>
           </div>
         )}
 
         {bgImage && isSolidColor && (
-          <div 
-            className="relative rounded-xl border border-divider h-32 flex items-center justify-center" 
+          <div
+            className="relative rounded-xl border border-divider h-32 flex items-center justify-center"
             style={{ backgroundColor: bgImage }}
           >
             <span className="text-gray-500 bg-white/80 dark:bg-black/80 px-2 py-1 rounded text-sm font-medium border border-gray-200 dark:border-gray-800 shadow-sm">
@@ -811,8 +836,8 @@ export default function ConfigPage() {
         <div className="flex flex-wrap items-center gap-2">
           <Button
             color="primary"
-            isLoading={uploading}
             isDisabled={isCommercialDisabled}
+            isLoading={uploading}
             size="sm"
             variant="flat"
             onPress={() => triggerBrandFilePicker(key)}
@@ -853,7 +878,10 @@ export default function ConfigPage() {
   const renderConfigItem = (item: ConfigItem) => {
     const isChanged =
       hasChanges && configs[item.key] !== originalConfigs[item.key];
-    const isCommercialDisabled = ["app_name", "app_logo", "app_favicon", "hide_footer_brand"].includes(item.key) && configs.is_commercial !== "true";
+    const isCommercialDisabled =
+      ["app_name", "app_logo", "app_favicon", "hide_footer_brand"].includes(
+        item.key,
+      ) && configs.is_commercial !== "true";
 
     switch (item.type) {
       case "bg_image":
@@ -872,13 +900,15 @@ export default function ConfigPage() {
                 ? "border-warning-300 data-[hover=true]:border-warning-400"
                 : "",
             }}
+            description={
+              isCommercialDisabled ? "需商业版授权才能修改此项" : undefined
+            }
+            isDisabled={isCommercialDisabled}
             placeholder={item.placeholder}
             size="md"
             value={configs[item.key] || ""}
             variant="bordered"
             onChange={(e) => handleConfigChange(item.key, e.target.value)}
-            isDisabled={isCommercialDisabled}
-            description={isCommercialDisabled ? "需商业版授权才能修改此项" : undefined}
           />
         );
 
@@ -888,12 +918,12 @@ export default function ConfigPage() {
             classNames={{
               wrapper: isChanged ? "border-warning-300" : "",
             }}
+            isDisabled={isCommercialDisabled}
             isSelected={configs[item.key] === "true"}
             size="sm"
             onValueChange={(checked) =>
               handleConfigChange(item.key, checked ? "true" : "false")
             }
-            isDisabled={isCommercialDisabled}
           >
             <span className="text-sm text-gray-700 dark:text-gray-300">
               {configs[item.key] === "true" ? "已启用" : "已禁用"}
@@ -1126,7 +1156,8 @@ export default function ConfigPage() {
             <div>
               <h2 className="text-xl font-semibold">商业版授权</h2>
               <p className="text-sm text-gray-600 dark:text-gray-400">
-                激活商业版授权以解锁自定义品牌功能（替换 Logo、应用名称，移除底部版权信息等）
+                激活商业版授权以解锁自定义品牌功能（替换
+                Logo、应用名称，移除底部版权信息等）
               </p>
             </div>
           </div>
@@ -1135,30 +1166,47 @@ export default function ConfigPage() {
         <CardBody className="pt-8">
           <div className="flex items-end gap-3 max-w-lg mb-6">
             <Input
+              description={
+                configs.is_commercial === "true"
+                  ? configs.license_expiry && configs.license_expiry !== "never"
+                    ? `已激活商业版授权 (有效期至: ${new Date(configs.license_expiry).toLocaleDateString()})`
+                    : "已激活商业版授权 (永久有效)"
+                  : "需商业授权才能修改站名、图标并隐藏页脚品牌"
+              }
+              isDisabled={configs.is_commercial === "true"}
               label="授权激活码"
               placeholder="请输入 FLVX- 开头的商业授权码"
               value={licenseKeyInput}
               variant="bordered"
               onChange={(e) => setLicenseKeyInput(e.target.value)}
-              isDisabled={configs.is_commercial === "true"}
-              description={configs.is_commercial === "true" ? (configs.license_expiry && configs.license_expiry !== "never" ? `已激活商业版授权 (有效期至: ${new Date(configs.license_expiry).toLocaleDateString()})` : "已激活商业版授权 (永久有效)") : "需商业授权才能修改站名、图标并隐藏页脚品牌"}
             />
             <Button
-              color="primary"
               className="mb-6"
-              isDisabled={configs.is_commercial === "true" || !licenseKeyInput.trim()}
+              color="primary"
+              isDisabled={
+                configs.is_commercial === "true" || !licenseKeyInput.trim()
+              }
               isLoading={activatingLicense}
               onPress={handleActivateLicense}
             >
               {configs.is_commercial === "true" ? "已授权" : "激活授权"}
             </Button>
           </div>
-          
+
           {configs.is_commercial === "true" && (
             <div className="space-y-6">
               <Divider className="my-2" />
-              <h3 className="text-md font-medium text-default-700">白标与品牌设置</h3>
-              {CONFIG_ITEMS.filter(item => ["app_name", "app_logo", "app_favicon", "hide_footer_brand"].includes(item.key)).map((item, index) => (
+              <h3 className="text-md font-medium text-default-700">
+                白标与品牌设置
+              </h3>
+              {CONFIG_ITEMS.filter((item) =>
+                [
+                  "app_name",
+                  "app_logo",
+                  "app_favicon",
+                  "hide_footer_brand",
+                ].includes(item.key),
+              ).map((item, index) => (
                 <div key={item.key}>
                   <div className="grid grid-cols-1 gap-6 md:grid-cols-[1fr_2fr]">
                     <div className="space-y-1">
@@ -1511,18 +1559,18 @@ export default function ConfigPage() {
       <AnimatePresence>
         {hasChanges && (
           <motion.div
-            initial={{ y: 100, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
-            exit={{ y: 100, opacity: 0 }}
-            transition={{ type: "spring", damping: 20, stiffness: 300 }}
             className="fixed bottom-6 right-6 z-50"
+            exit={{ y: 100, opacity: 0 }}
+            initial={{ y: 100, opacity: 0 }}
+            transition={{ type: "spring", damping: 20, stiffness: 300 }}
           >
             <Button
               isIconOnly
-              color="primary"
-              size="lg"
               className="w-12 h-12 rounded-full shadow-lg"
+              color="primary"
               isLoading={saving}
+              size="lg"
               onPress={handleSave}
             >
               {!saving && <SaveIcon className="w-5 h-5" />}

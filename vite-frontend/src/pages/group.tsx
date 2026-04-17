@@ -24,7 +24,6 @@ import {
   TableRow,
 } from "@/shadcn-bridge/heroui/table";
 import { Chip } from "@/shadcn-bridge/heroui/chip";
-
 import {
   assignGroupPermission,
   assignTunnelsToGroup,
@@ -477,451 +476,454 @@ export default function GroupPage() {
       ) : (
         <>
           <Card>
-        <CardHeader className="flex flex-row items-center gap-3 pb-2">
-          <h3 className="text-lg font-semibold">隧道分组</h3>
-          <Button
-            className="h-7 px-3 text-xs font-medium min-w-0 shadow-sm"
-            color="primary"
-            size="sm"
-            onPress={openCreateTunnelGroup}
-          >
-            新建
-          </Button>
-        </CardHeader>
-        <CardBody>
-          <Table
-            aria-label="隧道分组列表"
+            <CardHeader className="flex flex-row items-center gap-3 pb-2">
+              <h3 className="text-lg font-semibold">隧道分组</h3>
+              <Button
+                className="h-7 px-3 text-xs font-medium min-w-0 shadow-sm"
+                color="primary"
+                size="sm"
+                onPress={openCreateTunnelGroup}
+              >
+                新建
+              </Button>
+            </CardHeader>
+            <CardBody>
+              <Table
+                aria-label="隧道分组列表"
+                classNames={{
+                  wrapper:
+                    "bg-transparent p-0 shadow-none border-none overflow-hidden rounded-2xl",
+                  th: "bg-transparent text-default-600 font-semibold text-sm border-b border-white/20 dark:border-white/10 py-3 uppercase tracking-wider first:rounded-tl-[24px] last:rounded-tr-[24px]",
+                  td: "py-3 border-b border-divider/50 group-data-[last=true]:border-b-0",
+                  tr: "hover:bg-white/40 dark:hover:bg-white/10 transition-colors",
+                }}
+              >
+                <TableHeader>
+                  <TableColumn>名称</TableColumn>
+                  <TableColumn>隧道</TableColumn>
+                  <TableColumn>状态</TableColumn>
+                  <TableColumn>创建时间</TableColumn>
+                  <TableColumn>操作</TableColumn>
+                </TableHeader>
+                <TableBody emptyContent="暂无隧道分组" items={tunnelGroups}>
+                  {(item) => (
+                    <TableRow key={item.id}>
+                      <TableCell>{item.name}</TableCell>
+                      <TableCell>
+                        {item.tunnelNames.length > 0
+                          ? item.tunnelNames.join("、")
+                          : "-"}
+                      </TableCell>
+                      <TableCell>
+                        <Chip
+                          color={item.status === 1 ? "success" : "danger"}
+                          size="sm"
+                        >
+                          {item.status === 1 ? "启用" : "停用"}
+                        </Chip>
+                      </TableCell>
+                      <TableCell>{formatDate(item.createdTime)}</TableCell>
+                      <TableCell>
+                        <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            variant="flat"
+                            onPress={() => openAssignTunnels(item)}
+                          >
+                            分配隧道
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="light"
+                            onPress={() => openEditTunnelGroup(item)}
+                          >
+                            编辑
+                          </Button>
+                          <Button
+                            color="danger"
+                            size="sm"
+                            variant="light"
+                            onPress={() => handleDeleteTunnelGroup(item.id)}
+                          >
+                            删除
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </CardBody>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center gap-3 pb-2">
+              <h3 className="text-lg font-semibold">用户分组</h3>
+              <Button
+                className="h-7 px-3 text-xs font-medium min-w-0 shadow-sm"
+                color="primary"
+                size="sm"
+                onPress={openCreateUserGroup}
+              >
+                新建
+              </Button>
+            </CardHeader>
+            <CardBody>
+              <Table
+                aria-label="用户分组列表"
+                classNames={{
+                  wrapper:
+                    "bg-transparent p-0 shadow-none border-none overflow-hidden rounded-2xl",
+                  th: "bg-transparent text-default-600 font-semibold text-sm border-b border-white/20 dark:border-white/10 py-3 uppercase tracking-wider first:rounded-tl-[24px] last:rounded-tr-[24px]",
+                  td: "py-3 border-b border-divider/50 group-data-[last=true]:border-b-0",
+                  tr: "hover:bg-white/40 dark:hover:bg-white/10 transition-colors",
+                }}
+              >
+                <TableHeader>
+                  <TableColumn>名称</TableColumn>
+                  <TableColumn>用户</TableColumn>
+                  <TableColumn>状态</TableColumn>
+                  <TableColumn>创建时间</TableColumn>
+                  <TableColumn>操作</TableColumn>
+                </TableHeader>
+                <TableBody emptyContent="暂无用户分组" items={userGroups}>
+                  {(item) => (
+                    <TableRow key={item.id}>
+                      <TableCell>{item.name}</TableCell>
+                      <TableCell>
+                        {item.userNames.length > 0
+                          ? item.userNames.join("、")
+                          : "-"}
+                      </TableCell>
+                      <TableCell>
+                        <Chip
+                          color={item.status === 1 ? "success" : "danger"}
+                          size="sm"
+                        >
+                          {item.status === 1 ? "启用" : "停用"}
+                        </Chip>
+                      </TableCell>
+                      <TableCell>{formatDate(item.createdTime)}</TableCell>
+                      <TableCell>
+                        <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            variant="flat"
+                            onPress={() => openAssignUsers(item)}
+                          >
+                            分配用户
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="light"
+                            onPress={() => openEditUserGroup(item)}
+                          >
+                            编辑
+                          </Button>
+                          <Button
+                            color="danger"
+                            size="sm"
+                            variant="light"
+                            onPress={() => handleDeleteUserGroup(item.id)}
+                          >
+                            删除
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </CardBody>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <h3 className="text-lg font-semibold">权限分配</h3>
+            </CardHeader>
+            <CardBody className="space-y-4">
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-3 md:items-end">
+                <Select
+                  items={userGroups}
+                  label="用户分组"
+                  selectedKeys={
+                    selectedUserGroupId ? [String(selectedUserGroupId)] : []
+                  }
+                  onSelectionChange={(keys) => {
+                    const key = Array.from(keys as Set<React.Key>)[0];
+
+                    setSelectedUserGroupId(key ? Number(key) : null);
+                  }}
+                >
+                  {(item) => <SelectItem key={item.id}>{item.name}</SelectItem>}
+                </Select>
+                <Select
+                  items={tunnelGroups}
+                  label="隧道分组"
+                  selectedKeys={
+                    selectedTunnelGroupId ? [String(selectedTunnelGroupId)] : []
+                  }
+                  onSelectionChange={(keys) => {
+                    const key = Array.from(keys as Set<React.Key>)[0];
+
+                    setSelectedTunnelGroupId(key ? Number(key) : null);
+                  }}
+                >
+                  {(item) => <SelectItem key={item.id}>{item.name}</SelectItem>}
+                </Select>
+                <Button
+                  className="md:self-end md:justify-self-start whitespace-nowrap px-4"
+                  color="primary"
+                  isLoading={savingPermission}
+                  size="sm"
+                  onPress={handleAssignPermission}
+                >
+                  分配
+                </Button>
+              </div>
+
+              <Table
+                aria-label="分组权限列表"
+                classNames={{
+                  wrapper:
+                    "bg-transparent p-0 shadow-none border-none overflow-hidden rounded-2xl",
+                  th: "bg-transparent text-default-600 font-semibold text-sm border-b border-white/20 dark:border-white/10 py-3 uppercase tracking-wider first:rounded-tl-[24px] last:rounded-tr-[24px]",
+                  td: "py-3 border-b border-divider/50 group-data-[last=true]:border-b-0",
+                  tr: "hover:bg-white/40 dark:hover:bg-white/10 transition-colors",
+                }}
+              >
+                <TableHeader>
+                  <TableColumn>ID</TableColumn>
+                  <TableColumn>用户分组</TableColumn>
+                  <TableColumn>隧道分组</TableColumn>
+                  <TableColumn>创建时间</TableColumn>
+                  <TableColumn>操作</TableColumn>
+                </TableHeader>
+                <TableBody emptyContent="暂无权限分配记录" items={permissions}>
+                  {(item) => (
+                    <TableRow key={item.id}>
+                      <TableCell>{item.id}</TableCell>
+                      <TableCell>
+                        {item.userGroupName || item.userGroupId}
+                      </TableCell>
+                      <TableCell>
+                        {item.tunnelGroupName || item.tunnelGroupId}
+                      </TableCell>
+                      <TableCell>{formatDate(item.createdTime)}</TableCell>
+                      <TableCell>
+                        <Button
+                          color="danger"
+                          size="sm"
+                          variant="light"
+                          onPress={() => handleRemovePermission(item.id)}
+                        >
+                          回收
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </CardBody>
+          </Card>
+
+          <Modal
+            backdrop="blur"
             classNames={{
-              wrapper: "bg-transparent p-0 shadow-none border-none overflow-hidden rounded-2xl",
-              th: "bg-transparent text-default-600 font-semibold text-sm border-b border-white/20 dark:border-white/10 py-3 uppercase tracking-wider first:rounded-tl-[24px] last:rounded-tr-[24px]",
-              td: "py-3 border-b border-divider/50 group-data-[last=true]:border-b-0",
-              tr: "hover:bg-white/40 dark:hover:bg-white/10 transition-colors",
+              base: "!w-[calc(100%-32px)] !mx-auto sm:!w-full rounded-2xl overflow-hidden",
             }}
+            isOpen={tunnelGroupModalOpen}
+            onOpenChange={onTunnelGroupModalChange}
           >
-            <TableHeader>
-              <TableColumn>名称</TableColumn>
-              <TableColumn>隧道</TableColumn>
-              <TableColumn>状态</TableColumn>
-              <TableColumn>创建时间</TableColumn>
-              <TableColumn>操作</TableColumn>
-            </TableHeader>
-            <TableBody emptyContent="暂无隧道分组" items={tunnelGroups}>
-              {(item) => (
-                <TableRow key={item.id}>
-                  <TableCell>{item.name}</TableCell>
-                  <TableCell>
-                    {item.tunnelNames.length > 0
-                      ? item.tunnelNames.join("、")
-                      : "-"}
-                  </TableCell>
-                  <TableCell>
-                    <Chip
-                      color={item.status === 1 ? "success" : "danger"}
-                      size="sm"
-                    >
-                      {item.status === 1 ? "启用" : "停用"}
-                    </Chip>
-                  </TableCell>
-                  <TableCell>{formatDate(item.createdTime)}</TableCell>
-                  <TableCell>
-                    <div className="flex gap-2">
-                      <Button
-                        size="sm"
-                        variant="flat"
-                        onPress={() => openAssignTunnels(item)}
-                      >
-                        分配隧道
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="light"
-                        onPress={() => openEditTunnelGroup(item)}
-                      >
-                        编辑
-                      </Button>
-                      <Button
-                        color="danger"
-                        size="sm"
-                        variant="light"
-                        onPress={() => handleDeleteTunnelGroup(item.id)}
-                      >
-                        删除
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </CardBody>
-      </Card>
+            <ModalContent>
+              <ModalHeader>
+                {editingTunnelGroup ? "编辑隧道分组" : "新建隧道分组"}
+              </ModalHeader>
+              <ModalBody className="space-y-3">
+                <Input
+                  label="分组名称"
+                  value={groupName}
+                  onChange={(e) => setGroupName(e.target.value)}
+                />
+                <Select
+                  label="状态"
+                  selectedKeys={[groupStatus]}
+                  onSelectionChange={(keys) => {
+                    const key = Array.from(keys as Set<React.Key>)[0];
 
-      <Card>
-        <CardHeader className="flex flex-row items-center gap-3 pb-2">
-          <h3 className="text-lg font-semibold">用户分组</h3>
-          <Button
-            className="h-7 px-3 text-xs font-medium min-w-0 shadow-sm"
-            color="primary"
-            size="sm"
-            onPress={openCreateUserGroup}
-          >
-            新建
-          </Button>
-        </CardHeader>
-        <CardBody>
-          <Table
-            aria-label="用户分组列表"
+                    if (key) {
+                      setGroupStatus(String(key));
+                    }
+                  }}
+                >
+                  <SelectItem key="1">启用</SelectItem>
+                  <SelectItem key="0">停用</SelectItem>
+                </Select>
+              </ModalBody>
+              <ModalFooter>
+                <Button variant="light" onPress={onTunnelGroupModalClose}>
+                  取消
+                </Button>
+                <Button
+                  color="primary"
+                  isLoading={savingGroup}
+                  onPress={saveTunnelGroup}
+                >
+                  保存
+                </Button>
+              </ModalFooter>
+            </ModalContent>
+          </Modal>
+
+          <Modal
+            backdrop="blur"
             classNames={{
-              wrapper: "bg-transparent p-0 shadow-none border-none overflow-hidden rounded-2xl",
-              th: "bg-transparent text-default-600 font-semibold text-sm border-b border-white/20 dark:border-white/10 py-3 uppercase tracking-wider first:rounded-tl-[24px] last:rounded-tr-[24px]",
-              td: "py-3 border-b border-divider/50 group-data-[last=true]:border-b-0",
-              tr: "hover:bg-white/40 dark:hover:bg-white/10 transition-colors",
+              base: "!w-[calc(100%-32px)] !mx-auto sm:!w-full rounded-2xl overflow-hidden",
             }}
+            isOpen={userGroupModalOpen}
+            onOpenChange={onUserGroupModalChange}
           >
-            <TableHeader>
-              <TableColumn>名称</TableColumn>
-              <TableColumn>用户</TableColumn>
-              <TableColumn>状态</TableColumn>
-              <TableColumn>创建时间</TableColumn>
-              <TableColumn>操作</TableColumn>
-            </TableHeader>
-            <TableBody emptyContent="暂无用户分组" items={userGroups}>
-              {(item) => (
-                <TableRow key={item.id}>
-                  <TableCell>{item.name}</TableCell>
-                  <TableCell>
-                    {item.userNames.length > 0
-                      ? item.userNames.join("、")
-                      : "-"}
-                  </TableCell>
-                  <TableCell>
-                    <Chip
-                      color={item.status === 1 ? "success" : "danger"}
-                      size="sm"
-                    >
-                      {item.status === 1 ? "启用" : "停用"}
-                    </Chip>
-                  </TableCell>
-                  <TableCell>{formatDate(item.createdTime)}</TableCell>
-                  <TableCell>
-                    <div className="flex gap-2">
-                      <Button
-                        size="sm"
-                        variant="flat"
-                        onPress={() => openAssignUsers(item)}
-                      >
-                        分配用户
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="light"
-                        onPress={() => openEditUserGroup(item)}
-                      >
-                        编辑
-                      </Button>
-                      <Button
-                        color="danger"
-                        size="sm"
-                        variant="light"
-                        onPress={() => handleDeleteUserGroup(item.id)}
-                      >
-                        删除
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </CardBody>
-      </Card>
+            <ModalContent>
+              <ModalHeader>
+                {editingUserGroup ? "编辑用户分组" : "新建用户分组"}
+              </ModalHeader>
+              <ModalBody className="space-y-3">
+                <Input
+                  label="分组名称"
+                  value={groupName}
+                  onChange={(e) => setGroupName(e.target.value)}
+                />
+                <Select
+                  label="状态"
+                  selectedKeys={[groupStatus]}
+                  onSelectionChange={(keys) => {
+                    const key = Array.from(keys as Set<React.Key>)[0];
 
-      <Card>
-        <CardHeader>
-          <h3 className="text-lg font-semibold">权限分配</h3>
-        </CardHeader>
-        <CardBody className="space-y-4">
-          <div className="grid grid-cols-1 gap-3 md:grid-cols-3 md:items-end">
-            <Select
-              items={userGroups}
-              label="用户分组"
-              selectedKeys={
-                selectedUserGroupId ? [String(selectedUserGroupId)] : []
-              }
-              onSelectionChange={(keys) => {
-                const key = Array.from(keys as Set<React.Key>)[0];
+                    if (key) {
+                      setGroupStatus(String(key));
+                    }
+                  }}
+                >
+                  <SelectItem key="1">启用</SelectItem>
+                  <SelectItem key="0">停用</SelectItem>
+                </Select>
+              </ModalBody>
+              <ModalFooter>
+                <Button variant="light" onPress={onUserGroupModalClose}>
+                  取消
+                </Button>
+                <Button
+                  color="primary"
+                  isLoading={savingGroup}
+                  onPress={saveUserGroup}
+                >
+                  保存
+                </Button>
+              </ModalFooter>
+            </ModalContent>
+          </Modal>
 
-                setSelectedUserGroupId(key ? Number(key) : null);
-              }}
-            >
-              {(item) => <SelectItem key={item.id}>{item.name}</SelectItem>}
-            </Select>
-            <Select
-              items={tunnelGroups}
-              label="隧道分组"
-              selectedKeys={
-                selectedTunnelGroupId ? [String(selectedTunnelGroupId)] : []
-              }
-              onSelectionChange={(keys) => {
-                const key = Array.from(keys as Set<React.Key>)[0];
-
-                setSelectedTunnelGroupId(key ? Number(key) : null);
-              }}
-            >
-              {(item) => <SelectItem key={item.id}>{item.name}</SelectItem>}
-            </Select>
-            <Button
-              className="md:self-end md:justify-self-start whitespace-nowrap px-4"
-              color="primary"
-              isLoading={savingPermission}
-              size="sm"
-              onPress={handleAssignPermission}
-            >
-              分配
-            </Button>
-          </div>
-
-          <Table
-            aria-label="分组权限列表"
+          <Modal
+            backdrop="blur"
             classNames={{
-              wrapper: "bg-transparent p-0 shadow-none border-none overflow-hidden rounded-2xl",
-              th: "bg-transparent text-default-600 font-semibold text-sm border-b border-white/20 dark:border-white/10 py-3 uppercase tracking-wider first:rounded-tl-[24px] last:rounded-tr-[24px]",
-              td: "py-3 border-b border-divider/50 group-data-[last=true]:border-b-0",
-              tr: "hover:bg-white/40 dark:hover:bg-white/10 transition-colors",
+              base: "!w-[calc(100%-32px)] !mx-auto sm:!w-full rounded-2xl overflow-hidden",
             }}
+            isOpen={tunnelAssignModalOpen}
+            onOpenChange={onTunnelAssignModalChange}
           >
-            <TableHeader>
-              <TableColumn>ID</TableColumn>
-              <TableColumn>用户分组</TableColumn>
-              <TableColumn>隧道分组</TableColumn>
-              <TableColumn>创建时间</TableColumn>
-              <TableColumn>操作</TableColumn>
-            </TableHeader>
-            <TableBody emptyContent="暂无权限分配记录" items={permissions}>
-              {(item) => (
-                <TableRow key={item.id}>
-                  <TableCell>{item.id}</TableCell>
-                  <TableCell>
-                    {item.userGroupName || item.userGroupId}
-                  </TableCell>
-                  <TableCell>
-                    {item.tunnelGroupName || item.tunnelGroupId}
-                  </TableCell>
-                  <TableCell>{formatDate(item.createdTime)}</TableCell>
-                  <TableCell>
-                    <Button
-                      color="danger"
-                      size="sm"
-                      variant="light"
-                      onPress={() => handleRemovePermission(item.id)}
-                    >
-                      回收
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </CardBody>
-      </Card>
+            <ModalContent>
+              <ModalHeader>分配隧道 - {assignTunnelGroup?.name}</ModalHeader>
+              <ModalBody className="min-w-0">
+                <Select
+                  className="min-w-0"
+                  classNames={{ trigger: "max-w-full" }}
+                  items={tunnels}
+                  label="选择隧道"
+                  selectedKeys={selectedTunnelKeys}
+                  selectionMode="multiple"
+                  onSelectionChange={(keys) => {
+                    setSelectedTunnelKeys(
+                      new Set(Array.from(keys as Set<React.Key>).map(String)),
+                    );
+                  }}
+                >
+                  {(item) => <SelectItem key={item.id}>{item.name}</SelectItem>}
+                </Select>
+                <p
+                  className="w-full min-w-0 max-w-full text-xs text-default-500 truncate"
+                  title={`当前已选：${selectedTunnelSummary}`}
+                >
+                  当前已选：{selectedTunnelSummary}
+                </p>
+                <p className="text-xs text-default-500">
+                  不选择任何隧道并保存将清空该分组成员。
+                </p>
+              </ModalBody>
+              <ModalFooter>
+                <Button variant="light" onPress={onTunnelAssignModalClose}>
+                  取消
+                </Button>
+                <Button
+                  color="primary"
+                  isLoading={savingAssign}
+                  onPress={saveAssignTunnels}
+                >
+                  保存
+                </Button>
+              </ModalFooter>
+            </ModalContent>
+          </Modal>
 
-      <Modal
-        backdrop="blur"
-        classNames={{
-          base: "!w-[calc(100%-32px)] !mx-auto sm:!w-full rounded-2xl overflow-hidden",
-        }}
-        isOpen={tunnelGroupModalOpen}
-        onOpenChange={onTunnelGroupModalChange}
-      >
-        <ModalContent>
-          <ModalHeader>
-            {editingTunnelGroup ? "编辑隧道分组" : "新建隧道分组"}
-          </ModalHeader>
-          <ModalBody className="space-y-3">
-            <Input
-              label="分组名称"
-              value={groupName}
-              onChange={(e) => setGroupName(e.target.value)}
-            />
-            <Select
-              label="状态"
-              selectedKeys={[groupStatus]}
-              onSelectionChange={(keys) => {
-                const key = Array.from(keys as Set<React.Key>)[0];
-
-                if (key) {
-                  setGroupStatus(String(key));
-                }
-              }}
-            >
-              <SelectItem key="1">启用</SelectItem>
-              <SelectItem key="0">停用</SelectItem>
-            </Select>
-          </ModalBody>
-          <ModalFooter>
-            <Button variant="light" onPress={onTunnelGroupModalClose}>
-              取消
-            </Button>
-            <Button
-              color="primary"
-              isLoading={savingGroup}
-              onPress={saveTunnelGroup}
-            >
-              保存
-            </Button>
-          </ModalFooter>
-        </ModalContent>
-      </Modal>
-
-      <Modal
-        backdrop="blur"
-        classNames={{
-          base: "!w-[calc(100%-32px)] !mx-auto sm:!w-full rounded-2xl overflow-hidden",
-        }}
-        isOpen={userGroupModalOpen}
-        onOpenChange={onUserGroupModalChange}
-      >
-        <ModalContent>
-          <ModalHeader>
-            {editingUserGroup ? "编辑用户分组" : "新建用户分组"}
-          </ModalHeader>
-          <ModalBody className="space-y-3">
-            <Input
-              label="分组名称"
-              value={groupName}
-              onChange={(e) => setGroupName(e.target.value)}
-            />
-            <Select
-              label="状态"
-              selectedKeys={[groupStatus]}
-              onSelectionChange={(keys) => {
-                const key = Array.from(keys as Set<React.Key>)[0];
-
-                if (key) {
-                  setGroupStatus(String(key));
-                }
-              }}
-            >
-              <SelectItem key="1">启用</SelectItem>
-              <SelectItem key="0">停用</SelectItem>
-            </Select>
-          </ModalBody>
-          <ModalFooter>
-            <Button variant="light" onPress={onUserGroupModalClose}>
-              取消
-            </Button>
-            <Button
-              color="primary"
-              isLoading={savingGroup}
-              onPress={saveUserGroup}
-            >
-              保存
-            </Button>
-          </ModalFooter>
-        </ModalContent>
-      </Modal>
-
-      <Modal
-        backdrop="blur"
-        classNames={{
-          base: "!w-[calc(100%-32px)] !mx-auto sm:!w-full rounded-2xl overflow-hidden",
-        }}
-        isOpen={tunnelAssignModalOpen}
-        onOpenChange={onTunnelAssignModalChange}
-      >
-        <ModalContent>
-          <ModalHeader>分配隧道 - {assignTunnelGroup?.name}</ModalHeader>
-          <ModalBody className="min-w-0">
-            <Select
-              className="min-w-0"
-              classNames={{ trigger: "max-w-full" }}
-              items={tunnels}
-              label="选择隧道"
-              selectedKeys={selectedTunnelKeys}
-              selectionMode="multiple"
-              onSelectionChange={(keys) => {
-                setSelectedTunnelKeys(
-                  new Set(Array.from(keys as Set<React.Key>).map(String)),
-                );
-              }}
-            >
-              {(item) => <SelectItem key={item.id}>{item.name}</SelectItem>}
-            </Select>
-            <p
-              className="w-full min-w-0 max-w-full text-xs text-default-500 truncate"
-              title={`当前已选：${selectedTunnelSummary}`}
-            >
-              当前已选：{selectedTunnelSummary}
-            </p>
-            <p className="text-xs text-default-500">
-              不选择任何隧道并保存将清空该分组成员。
-            </p>
-          </ModalBody>
-          <ModalFooter>
-            <Button variant="light" onPress={onTunnelAssignModalClose}>
-              取消
-            </Button>
-            <Button
-              color="primary"
-              isLoading={savingAssign}
-              onPress={saveAssignTunnels}
-            >
-              保存
-            </Button>
-          </ModalFooter>
-        </ModalContent>
-      </Modal>
-
-      <Modal
-        backdrop="blur"
-        classNames={{
-          base: "!w-[calc(100%-32px)] !mx-auto sm:!w-full rounded-2xl overflow-hidden",
-        }}
-        isOpen={userAssignModalOpen}
-        onOpenChange={onUserAssignModalChange}
-      >
-        <ModalContent>
-          <ModalHeader>分配用户 - {assignUserGroup?.name}</ModalHeader>
-          <ModalBody className="min-w-0">
-            <Select
-              className="min-w-0"
-              classNames={{ trigger: "max-w-full" }}
-              items={users}
-              label="选择用户"
-              selectedKeys={selectedUserKeys}
-              selectionMode="multiple"
-              onSelectionChange={(keys) => {
-                setSelectedUserKeys(
-                  new Set(Array.from(keys as Set<React.Key>).map(String)),
-                );
-              }}
-            >
-              {(item) => <SelectItem key={item.id}>{item.user}</SelectItem>}
-            </Select>
-            <p
-              className="w-full min-w-0 max-w-full text-xs text-default-500 truncate"
-              title={`当前已选：${selectedUserSummary}`}
-            >
-              当前已选：{selectedUserSummary}
-            </p>
-            <p className="text-xs text-default-500">
-              不选择任何用户并保存将清空该分组成员。
-            </p>
-          </ModalBody>
-          <ModalFooter>
-            <Button variant="light" onPress={onUserAssignModalClose}>
-              取消
-            </Button>
-            <Button
-              color="primary"
-              isLoading={savingAssign}
-              onPress={saveAssignUsers}
-            >
-              保存
-            </Button>
-          </ModalFooter>
-        </ModalContent>
-      </Modal>
+          <Modal
+            backdrop="blur"
+            classNames={{
+              base: "!w-[calc(100%-32px)] !mx-auto sm:!w-full rounded-2xl overflow-hidden",
+            }}
+            isOpen={userAssignModalOpen}
+            onOpenChange={onUserAssignModalChange}
+          >
+            <ModalContent>
+              <ModalHeader>分配用户 - {assignUserGroup?.name}</ModalHeader>
+              <ModalBody className="min-w-0">
+                <Select
+                  className="min-w-0"
+                  classNames={{ trigger: "max-w-full" }}
+                  items={users}
+                  label="选择用户"
+                  selectedKeys={selectedUserKeys}
+                  selectionMode="multiple"
+                  onSelectionChange={(keys) => {
+                    setSelectedUserKeys(
+                      new Set(Array.from(keys as Set<React.Key>).map(String)),
+                    );
+                  }}
+                >
+                  {(item) => <SelectItem key={item.id}>{item.user}</SelectItem>}
+                </Select>
+                <p
+                  className="w-full min-w-0 max-w-full text-xs text-default-500 truncate"
+                  title={`当前已选：${selectedUserSummary}`}
+                >
+                  当前已选：{selectedUserSummary}
+                </p>
+                <p className="text-xs text-default-500">
+                  不选择任何用户并保存将清空该分组成员。
+                </p>
+              </ModalBody>
+              <ModalFooter>
+                <Button variant="light" onPress={onUserAssignModalClose}>
+                  取消
+                </Button>
+                <Button
+                  color="primary"
+                  isLoading={savingAssign}
+                  onPress={saveAssignUsers}
+                >
+                  保存
+                </Button>
+              </ModalFooter>
+            </ModalContent>
+          </Modal>
         </>
       )}
     </AnimatedPage>

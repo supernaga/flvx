@@ -414,8 +414,8 @@ export function Select<T>({
           <option value="">{placeholder ?? "请选择"}</option>
           {options.map((option) => (
             <option
-              className="bg-background text-foreground"
               key={option.key}
+              className="bg-background text-foreground"
               disabled={disabled.has(option.key)}
               value={option.key}
             >

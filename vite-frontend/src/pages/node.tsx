@@ -17,10 +17,10 @@ import {
   useSortable,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import { LayoutGrid, List } from "lucide-react";
 
 import { SearchBar } from "@/components/search-bar";
 import { AnimatedPage } from "@/components/animated-page";
-import { LayoutGrid, List } from "lucide-react";
 import {
   Table,
   TableHeader,
@@ -699,7 +699,6 @@ export default function NodePage() {
 
   // 格式化流量
 
-
   const formatFlow = (bytes: number): string => {
     if (!Number.isFinite(bytes) || bytes <= 0) {
       return "0 B";
@@ -725,7 +724,6 @@ export default function NodePage() {
 
     return "未知链路";
   };
-
 
   // IPv4/IPv6 格式验证（仅用于判定地址族）
   const ipv4Regex =
@@ -1650,10 +1648,12 @@ export default function NodePage() {
                 {/* 视图切换按钮 */}
                 <Button
                   isIconOnly
+                  className="text-default-600 hidden sm:flex"
                   size="sm"
                   variant="flat"
-                  className="text-default-600 hidden sm:flex"
-                  onPress={() => setViewMode(viewMode === "list" ? "grid" : "list")}
+                  onPress={() =>
+                    setViewMode(viewMode === "list" ? "grid" : "list")
+                  }
                 >
                   {viewMode === "list" ? (
                     <LayoutGrid className="w-4 h-4" />
@@ -1767,7 +1767,8 @@ export default function NodePage() {
             aria-label="节点列表"
             className="overflow-x-auto min-w-full"
             classNames={{
-              wrapper: "bg-transparent p-0 shadow-none border-none overflow-hidden rounded-2xl",
+              wrapper:
+                "bg-transparent p-0 shadow-none border-none overflow-hidden rounded-2xl",
               th: "bg-transparent text-default-600 font-semibold text-sm border-b border-white/20 dark:border-white/10 py-3 uppercase tracking-wider first:rounded-tl-[24px] last:rounded-tr-[24px]",
               td: "py-3 border-b border-divider/50 group-data-[last=true]:border-b-0",
               tr: "hover:bg-white/10 dark:hover:bg-white/5 transition-colors",
@@ -1776,7 +1777,11 @@ export default function NodePage() {
             <TableHeader>
               <TableColumn className="w-12 px-4 whitespace-nowrap overflow-hidden">
                 <Checkbox
-                  isSelected={selectMode && selectedIds.size === displayNodes.length && displayNodes.length > 0}
+                  isSelected={
+                    selectMode &&
+                    selectedIds.size === displayNodes.length &&
+                    displayNodes.length > 0
+                  }
                   onValueChange={(checked) => {
                     if (checked) {
                       selectAll();
@@ -1806,12 +1811,16 @@ export default function NodePage() {
                         onValueChange={(checked) => {
                           if (checked) {
                             setSelectMode(true);
-                            setSelectedIds((prev) => new Set([...prev, node.id]));
+                            setSelectedIds(
+                              (prev) => new Set([...prev, node.id]),
+                            );
                           } else {
                             setSelectedIds((prev) => {
                               const next = new Set(prev);
+
                               next.delete(node.id);
                               if (next.size === 0) setSelectMode(false);
+
                               return next;
                             });
                           }
@@ -1833,7 +1842,11 @@ export default function NodePage() {
                           {node.name}
                         </span>
                         {hasRemark && (
-                          <Chip size="sm" variant="flat" className="h-4 px-1 text-[10px]">
+                          <Chip
+                            className="h-4 px-1 text-[10px]"
+                            size="sm"
+                            variant="flat"
+                          >
                             {node.remark}
                           </Chip>
                         )}
@@ -1841,7 +1854,9 @@ export default function NodePage() {
                     </TableCell>
                     <TableCell>
                       <span className="text-sm font-mono text-default-600">
-                        {isRemoteNode ? new URL(node.remoteUrl || "").hostname : node.serverIp}
+                        {isRemoteNode
+                          ? new URL(node.remoteUrl || "").hostname
+                          : node.serverIp}
                       </span>
                     </TableCell>
                     <TableCell>
@@ -1853,10 +1868,10 @@ export default function NodePage() {
                       <div className="flex flex-wrap items-center gap-1.5 min-w-max">
                         {!isRemoteNode && (
                           <Button
-                            size="sm"
-                            variant="flat"
                             className="h-6 px-2 min-w-0 text-xs bg-emerald-50 text-emerald-600 hover:bg-emerald-100 dark:bg-emerald-950/30 dark:text-emerald-400"
                             isLoading={node.copyLoading}
+                            size="sm"
+                            variant="flat"
                             onPress={() => openInstallSelector(node)}
                           >
                             安装
@@ -1864,11 +1879,11 @@ export default function NodePage() {
                         )}
                         {!isRemoteNode && (
                           <Button
-                            size="sm"
-                            variant="flat"
                             className="h-6 px-2 min-w-0 text-xs bg-amber-50 text-amber-600 hover:bg-amber-100 dark:bg-amber-950/30 dark:text-amber-400"
                             isDisabled={node.connectionStatus !== "online"}
                             isLoading={node.upgradeLoading}
+                            size="sm"
+                            variant="flat"
                             onPress={() => {
                               setUpgradeTargetNodeId(node.id);
                               openUpgradeModal("single");
@@ -1879,11 +1894,11 @@ export default function NodePage() {
                         )}
                         {!isRemoteNode && (
                           <Button
-                            size="sm"
-                            variant="flat"
                             className="h-6 px-2 min-w-0 text-xs bg-blue-50 text-blue-600 hover:bg-blue-100 dark:bg-blue-950/30 dark:text-blue-400"
                             isDisabled={node.connectionStatus !== "online"}
                             isLoading={node.rollbackLoading}
+                            size="sm"
+                            variant="flat"
                             onPress={() => handleRollbackNode(node)}
                           >
                             回退
@@ -1891,18 +1906,18 @@ export default function NodePage() {
                         )}
                         {!isRemoteNode && (
                           <Button
+                            className="h-6 px-2 min-w-0 text-xs bg-indigo-50 text-indigo-600 hover:bg-indigo-100 dark:bg-indigo-950/30 dark:text-indigo-400"
                             size="sm"
                             variant="flat"
-                            className="h-6 px-2 min-w-0 text-xs bg-indigo-50 text-indigo-600 hover:bg-indigo-100 dark:bg-indigo-950/30 dark:text-indigo-400"
                             onPress={() => handleEdit(node)}
                           >
                             编辑
                           </Button>
                         )}
                         <Button
+                          className="h-6 px-2 min-w-0 text-xs bg-rose-50 text-rose-600 hover:bg-rose-100 dark:bg-rose-950/30 dark:text-rose-400"
                           size="sm"
                           variant="flat"
-                          className="h-6 px-2 min-w-0 text-xs bg-rose-50 text-rose-600 hover:bg-rose-100 dark:bg-rose-950/30 dark:text-rose-400"
                           onPress={() => handleDelete(node)}
                         >
                           删除
@@ -2054,7 +2069,9 @@ export default function NodePage() {
                                               type="button"
                                               onClick={(e) => {
                                                 e.stopPropagation();
-                                                handleDismissExpiryReminder(node.id);
+                                                handleDismissExpiryReminder(
+                                                  node.id,
+                                                );
                                               }}
                                             >
                                               关闭提醒
@@ -2326,8 +2343,6 @@ export default function NodePage() {
                               )}
                             </div>
                           )}
-
-
 
                           <div className="mt-auto space-y-3">
                             {/* 操作按钮 */}

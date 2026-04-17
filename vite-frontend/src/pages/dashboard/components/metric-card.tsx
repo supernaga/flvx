@@ -25,9 +25,7 @@ export const MetricCard = ({
             <p className="text-sm font-medium text-default-600 truncate">
               {title}
             </p>
-            <div
-              className={`p-2 rounded-xl flex-shrink-0 ${iconClassName}`}
-            >
+            <div className={`p-2 rounded-xl flex-shrink-0 ${iconClassName}`}>
               {icon}
             </div>
           </div>
@@ -35,9 +33,7 @@ export const MetricCard = ({
             {value}
           </p>
         </div>
-        <div className="mt-auto pt-4">
-          {bottomContent}
-        </div>
+        <div className="mt-auto pt-4">{bottomContent}</div>
       </CardBody>
     </Card>
   );

@@ -50,7 +50,10 @@ export const FlowChartCard = ({
         ) : (
           <div className="h-64 lg:h-80 w-full">
             <ResponsiveContainer height="100%" width="100%">
-              <LineChart data={chartData} margin={{ top: 20, right: 0, left: -20, bottom: 0 }}>
+              <LineChart
+                data={chartData}
+                margin={{ top: 20, right: 0, left: -20, bottom: 0 }}
+              >
                 <XAxis
                   axisLine={false}
                   dataKey="time"
@@ -106,11 +109,7 @@ export const FlowChartCard = ({
                   }}
                   cursor={{ fill: "rgba(0, 122, 255, 0.05)" }}
                 />
-                <Line
-                  dataKey="flow"
-                  stroke="#007aff"
-                  type="monotone"
-                />
+                <Line dataKey="flow" stroke="#007aff" type="monotone" />
               </LineChart>
             </ResponsiveContainer>
           </div>

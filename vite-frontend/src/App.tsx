@@ -94,21 +94,39 @@ function App() {
   useEffect(() => {
     const updateBg = () => {
       const customBg = siteConfig.app_bg_image;
+
       if (customBg) {
         if (customBg === "theme") {
           document.documentElement.style.removeProperty("--custom-bg-image");
           document.documentElement.style.removeProperty("--custom-bg-color");
           document.documentElement.classList.add("has-theme-bg");
           document.documentElement.classList.remove("has-custom-bg");
-        } else if (customBg.startsWith("http") || customBg.startsWith("data:") || customBg.startsWith("/") || customBg.startsWith("blob:")) {
-          document.documentElement.style.setProperty("--custom-bg-image", `url(${customBg})`);
-          document.documentElement.style.setProperty("--custom-bg-color", "transparent");
+        } else if (
+          customBg.startsWith("http") ||
+          customBg.startsWith("data:") ||
+          customBg.startsWith("/") ||
+          customBg.startsWith("blob:")
+        ) {
+          document.documentElement.style.setProperty(
+            "--custom-bg-image",
+            `url(${customBg})`,
+          );
+          document.documentElement.style.setProperty(
+            "--custom-bg-color",
+            "transparent",
+          );
           document.documentElement.classList.add("has-custom-bg");
           document.documentElement.classList.remove("has-theme-bg");
         } else {
           // Assume solid color like "#ffffff", "white", etc.
-          document.documentElement.style.setProperty("--custom-bg-image", "none");
-          document.documentElement.style.setProperty("--custom-bg-color", customBg);
+          document.documentElement.style.setProperty(
+            "--custom-bg-image",
+            "none",
+          );
+          document.documentElement.style.setProperty(
+            "--custom-bg-color",
+            customBg,
+          );
           document.documentElement.classList.add("has-custom-bg");
           document.documentElement.classList.remove("has-theme-bg");
         }
@@ -119,8 +137,10 @@ function App() {
         document.documentElement.classList.remove("has-theme-bg");
       }
     };
+
     updateBg();
     window.addEventListener("site-config-updated", updateBg);
+
     return () => {
       window.removeEventListener("site-config-updated", updateBg);
     };

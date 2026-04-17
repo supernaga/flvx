@@ -51,7 +51,11 @@ export interface DropdownMenuProps {
 export function DropdownMenu({ children, className }: DropdownMenuProps) {
   const { align } = React.useContext(DropdownContext);
 
-  return <DropdownMenuContent align={align} className={className}>{children}</DropdownMenuContent>;
+  return (
+    <DropdownMenuContent align={align} className={className}>
+      {children}
+    </DropdownMenuContent>
+  );
 }
 
 export interface DropdownItemProps {
