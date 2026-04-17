@@ -275,3 +275,4 @@ sql/
 go-backend/gost.db-shm
 .gitignore
 go-backend/gost.db-wal
+.worktrees/
