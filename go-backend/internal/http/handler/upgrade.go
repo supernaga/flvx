@@ -163,7 +163,6 @@ func (h *Handler) nodeUpgrade(w http.ResponseWriter, r *http.Request) {
 		ID      int64  `json:"id"`
 		Version string `json:"version"`
 		Channel string `json:"channel"`
-		Engine  string `json:"engine"`
 	}
 	if err := decodeJSON(r.Body, &req); err != nil {
 		response.WriteJSON(w, response.ErrDefault("请求参数错误"))
@@ -191,7 +190,6 @@ func (h *Handler) nodeUpgrade(w http.ResponseWriter, r *http.Request) {
 	dashChecksumURL := h.buildGithubDownloadURL(version, "dash-{ARCH}.sha256")
 
 	result, err := h.wsServer.SendCommand(req.ID, "UpgradeAgent", map[string]interface{}{
-		"engine":          req.Engine,
 		"downloadUrl":     downloadURL,
 		"checksumUrl":     checksumURL,
 		"dashDownloadUrl": dashDownloadURL,
@@ -227,7 +225,6 @@ func (h *Handler) nodeBatchUpgrade(w http.ResponseWriter, r *http.Request) {
 		IDs     []int64 `json:"ids"`
 		Version string  `json:"version"`
 		Channel string  `json:"channel"`
-		Engine  string  `json:"engine"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		response.WriteJSON(w, response.ErrDefault("请求参数错误"))
@@ -272,7 +269,6 @@ func (h *Handler) nodeBatchUpgrade(w http.ResponseWriter, r *http.Request) {
 			defer func() { <-sem }()
 
 			result, err := h.wsServer.SendCommand(nodeID, "UpgradeAgent", map[string]interface{}{
-				"engine":          req.Engine,
 				"downloadUrl":     downloadURL,
 				"checksumUrl":     checksumURL,
 				"dashDownloadUrl": dashDownloadURL,
