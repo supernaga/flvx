@@ -31,7 +31,7 @@ func FromEnv() Config {
 		RuntimeEngineDefault:  DefaultRuntimeEngine(),
 		DashRuntimeEnabled:    getEnv("DASH_RUNTIME_ENABLED", "0") == "1",
 		DashNodeAPIScheme:     getEnv("DASH_NODE_API_SCHEME", "http"),
-		DashNodeAPIPort:       getEnv("DASH_NODE_API_PORT", "8080"),
+		DashNodeAPIPort:       getEnv("DASH_NODE_API_PORT", "19090"),
 		DashRequestTimeoutSec: getEnvInt("DASH_REQUEST_TIMEOUT_SEC", 10),
 	}
 
