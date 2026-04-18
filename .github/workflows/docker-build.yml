@@ -95,13 +95,6 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-go-
 
-      - name: Install UPX
-        run: |
-          wget -q https://github.com/upx/upx/releases/download/v4.2.1/upx-4.2.1-amd64_linux.tar.xz
-          tar -xf upx-4.2.1-amd64_linux.tar.xz
-          sudo mv upx-4.2.1-amd64_linux/upx /usr/local/bin/
-          rm -rf upx-4.2.1-amd64_linux*
-
       - name: Build GOST binary (AMD64)
         working-directory: ./go-gost
         run: CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-s -w -X main.version=${{ needs.check-version.outputs.version }}" -o gost-amd64
@@ -109,12 +102,6 @@ jobs:
       - name: Build GOST binary (ARM64)
         working-directory: ./go-gost
         run: CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -ldflags="-s -w -X main.version=${{ needs.check-version.outputs.version }}" -o gost-arm64
-
-      - name: Compress with UPX
-        working-directory: ./go-gost
-        run: |
-          upx --best --lzma gost-amd64
-          upx --best --lzma gost-arm64
 
       - name: Generate SHA256 checksums
         working-directory: ./go-gost
@@ -176,19 +163,6 @@ jobs:
         run: |
           mv target/x86_64-unknown-linux-musl/release/dash dash-amd64
           mv target/aarch64-unknown-linux-musl/release/dash dash-arm64
-
-      - name: Install UPX
-        run: |
-          wget -q https://github.com/upx/upx/releases/download/v4.2.1/upx-4.2.1-amd64_linux.tar.xz
-          tar -xf upx-4.2.1-amd64_linux.tar.xz
-          sudo mv upx-4.2.1-amd64_linux/upx /usr/local/bin/
-          rm -rf upx-4.2.1-amd64_linux*
-
-      - name: Compress with UPX
-        working-directory: ./dash
-        run: |
-          upx --best --lzma dash-amd64
-          upx --best --lzma dash-arm64
 
       - name: Generate SHA256 checksums
         working-directory: ./dash
