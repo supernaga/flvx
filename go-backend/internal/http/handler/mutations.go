@@ -724,9 +724,20 @@ func (h *Handler) cleanupTunnelRuntime(tunnelID int64) {
 	if err != nil || tunnel.Type != 2 {
 		return
 	}
+	
 	chainRows, err := h.listChainNodesForTunnel(tunnelID)
 	if err != nil {
 		return
+	}
+
+	if client, err := h.currentRuntimeClient(); err == nil {
+		if deleter, ok := client.(dashRuleDeleter); ok {
+			for _, row := range chainRows {
+				if row.ChainType == 3 {
+					_ = deleter.DeleteRule(context.Background(), row.NodeID, fmt.Sprintf("tunnel-%d", tunnelID))
+				}
+			}
+		}
 	}
 
 	serviceName := fmt.Sprintf("%d_tls", tunnelID)
@@ -3903,6 +3914,11 @@ func (h *Handler) deleteTunnelByID(id int64) error {
 }
 
 func (h *Handler) deleteForwardByID(id int64) error {
+	forward, err := h.getForwardRecord(id)
+	if err == nil {
+		oldPorts, _ := h.listForwardPorts(id)
+		_ = h.reconcileForwardRuntimeForCurrentEngine(context.Background(), id, forward.TunnelID, oldPorts, nil, nil)
+	}
 	return h.repo.DeleteForwardCascade(id)
 }
 
