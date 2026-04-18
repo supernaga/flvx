@@ -2,6 +2,8 @@ package dashruntime
 
 import (
 	"fmt"
+	"net"
+	"strconv"
 	"strings"
 
 	"go-backend/internal/store/model"
@@ -96,7 +98,7 @@ func buildForwardRulePayload(
 	return RelayRulePayload{
 		ID:          ruleID,
 		Protocol:    protocol,
-		Listen:      fmt.Sprintf("%s:%d", listenHost, port.Port),
+		Listen:      net.JoinHostPort(listenHost, strconv.Itoa(port.Port)),
 		Enabled:     true,
 		Description: &description,
 		StagePools:  stagePools,
